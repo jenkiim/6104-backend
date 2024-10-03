@@ -2,8 +2,8 @@ import { ObjectId } from "mongodb";
 
 import { Router, getExpressRouter } from "./framework/router";
 
-import { Authing, Friending, Posting, Sessioning } from "./app";
-import { PostOptions } from "./concepts/posting";
+import { Authing, Friending, RespondingToTopic, Sessioning, Topicing } from "./app";
+// import { ResponseOptions } from "./concepts/responding";
 import { SessionDoc } from "./concepts/sessioning";
 import Responses from "./responses";
 
@@ -70,40 +70,68 @@ class Routes {
     return { msg: "Logged out!" };
   }
 
-  @Router.get("/posts")
-  @Router.validate(z.object({ author: z.string().optional() }))
-  async getPosts(author?: string) {
-    let posts;
-    if (author) {
+  @Router.get("/topics")
+  async getTopics() {
+    let topics;
+    topics = await Topicing.getTopics();
+    return Responses.topics(topics);
+  }
+
+  @Router.post("/topic")
+  async createTopic(session: SessionDoc, title: string, description: string) {
+    const user = Sessioning.getUser(session);
+    const created = await Topicing.create(user, title, description);
+    return { msg: created.msg, response: await Responses.topic(created.topic) };
+  }
+
+  @Router.delete("/topic/:id")
+  async deleteTopic(session: SessionDoc, id: string) {
+    const user = Sessioning.getUser(session);
+    const oid = new ObjectId(id);
+    await Topicing.assertAuthorIsUser(oid, user);
+    return Topicing.delete(oid);
+  }
+
+  @Router.get("/responses/topic")
+  @Router.validate(z.object({ author: z.string().optional(), title: z.string().optional() }))
+  async getResponsesToTopics(author?: string, title?: string) {
+    let responses;
+    if (author && !title) {
       const id = (await Authing.getUserByUsername(author))._id;
-      posts = await Posting.getByAuthor(id);
-    } else {
-      posts = await Posting.getPosts();
+      responses = await RespondingToTopic.getByAuthor(id);
     }
-    return Responses.posts(posts);
+    else if (!author && title) {
+      const id = (await Topicing.getTopicByTitle(title))._id;
+      responses = await RespondingToTopic.getByTarget(id);
+    }
+    else {
+      responses = await RespondingToTopic.getResponses();
+    }
+    return Responses.responses(responses);
   }
 
-  @Router.post("/posts")
-  async createPost(session: SessionDoc, content: string, options?: PostOptions) {
+  @Router.post("/responses/topic")
+  async createResponseToTopic(session: SessionDoc, content: string, topicId: string) { //, options?: PostOptions
     const user = Sessioning.getUser(session);
-    const created = await Posting.create(user, content, options);
-    return { msg: created.msg, post: await Responses.post(created.post) };
+    const topic = new ObjectId(topicId);
+    const created = await RespondingToTopic.create(user, content, topic);
+    return { msg: created.msg, response: await Responses.respond(created.response) };
   }
 
-  @Router.patch("/posts/:id")
-  async updatePost(session: SessionDoc, id: string, content?: string, options?: PostOptions) {
+  @Router.patch("/responses/topic/:id")
+  async updateResponseToTopic(session: SessionDoc, id: string, content?: string) { //, options?: PostOptions
     const user = Sessioning.getUser(session);
     const oid = new ObjectId(id);
-    await Posting.assertAuthorIsUser(oid, user);
-    return await Posting.update(oid, content, options);
+    await RespondingToTopic.assertAuthorIsUser(oid, user);
+    return await RespondingToTopic.update(oid, content); //, options
   }
 
-  @Router.delete("/posts/:id")
-  async deletePost(session: SessionDoc, id: string) {
+  @Router.delete("/responses/topic/:id")
+  async deleteResponseToTopic(session: SessionDoc, id: string) {
     const user = Sessioning.getUser(session);
     const oid = new ObjectId(id);
-    await Posting.assertAuthorIsUser(oid, user);
-    return Posting.delete(oid);
+    await RespondingToTopic.assertAuthorIsUser(oid, user);
+    return RespondingToTopic.delete(oid);
   }
 
   @Router.get("/friends")
