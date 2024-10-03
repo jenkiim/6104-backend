@@ -57,10 +57,10 @@ const operations: Operation[] = [
     fields: { username: "input" },
   },
   {
-    name: "Get All Topics",
+    name: "Search All Topics",
     endpoint: "/api/topics",
     method: "GET",
-    fields: {},
+    fields: { search: "input" },
   },
   {
     name: "Create Topic",
@@ -78,17 +78,23 @@ const operations: Operation[] = [
     name: "Get Responses to Topics (empty for all)",
     endpoint: "/api/responses/topic",
     method: "GET",
-    fields: { author: "input", title: "input" },
+    fields: { author: "input", topic: "input" },
   },
   {
     name: "Create Response to Topic",
     endpoint: "/api/responses/topic",
     method: "POST",
-    fields: { content: "input", topicId: "input" },
+    fields: { title: "input", content: "input", topicId: "input" },
   },
   {
-    name: "Update Response to Topic",
-    endpoint: "/api/responses/topic/:id",
+    name: "Update Title of Response to Topic",
+    endpoint: "/api/responses/topic/:id/title",
+    method: "PATCH",
+    fields: { id: "input", title: "input"}, //, options: { backgroundColor: "input" } 
+  },
+  {
+    name: "Update Content of Response to Topic",
+    endpoint: "/api/responses/topic/:id/content",
     method: "PATCH",
     fields: { id: "input", content: "input"}, //, options: { backgroundColor: "input" } 
   },
