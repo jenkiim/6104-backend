@@ -5,6 +5,7 @@ import { NotAllowedError, NotFoundError } from "./errors";
 
 export interface ResponseDoc extends BaseDoc {
   author: ObjectId;
+  title: string;
   content: string;
   target: ObjectId;
 }
@@ -22,8 +23,8 @@ export default class RespondingConcept {
     this.responses = new DocCollection<ResponseDoc>(collectionName);
   }
 
-  async create(author: ObjectId, content: string, target: ObjectId) {
-    const _id = await this.responses.createOne({ author, content, target});
+  async create(author: ObjectId, title: string, content: string, target: ObjectId) {
+    const _id = await this.responses.createOne({ author, title, content, target});
     return { msg: "Response successfully created!", response: await this.responses.readOne({ _id }) };
   }
 
@@ -40,12 +41,20 @@ export default class RespondingConcept {
     return await this.responses.readMany({ target });
   }
 
-  async update(_id: ObjectId, content?: string) { //, options?: ResponseOptions
+  async updateTitle(_id: ObjectId, title?: string) { //, options?: ResponseOptions
     // Note that if content or options is undefined, those fields will *not* be updated
     // since undefined values for partialUpdateOne are ignored.
-    await this.responses.partialUpdateOne({ _id }, { content});
+    await this.responses.partialUpdateOne({ _id }, { title });
     return { msg: "Response successfully updated!" };
   }
+
+  async updateContent(_id: ObjectId, content?: string) { //, options?: ResponseOptions
+    // Note that if content or options is undefined, those fields will *not* be updated
+    // since undefined values for partialUpdateOne are ignored.
+    await this.responses.partialUpdateOne({ _id }, { content });
+    return { msg: "Response successfully updated!" };
+  }
+
 
   async delete(_id: ObjectId) {
     await this.responses.deleteOne({ _id });

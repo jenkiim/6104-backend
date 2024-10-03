@@ -28,7 +28,7 @@ export default class TopicingConcept {
     return { msg: "Topic successfully created!", topic: await this.topics.readOne({ _id }) };
   }
 
-  async getTopics() {
+  async getAllTopics() {
     // Returns all topics! You might want to page for better client performance
     return await this.topics.readMany({}, { sort: { _id: -1 } });
   }
@@ -52,6 +52,18 @@ export default class TopicingConcept {
       throw new NotFoundError(`Topic not found!`);
     }
     return topic;
+  }
+
+  async searchTopicTitles(title: string) {
+    const topics = await this.topics.readMany({
+      title: { $regex: title, $options: "i" } // case-insensitive
+    });
+    
+    if (!topics || topics.length === 0) {
+      throw new NotFoundError(`No topics found with the given title!`);
+    }
+    
+    return topics;
   }
 
   async assertAuthorIsUser(_id: ObjectId, user: ObjectId) {
