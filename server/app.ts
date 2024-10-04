@@ -10,5 +10,5 @@ export const Sessioning = new SessioningConcept();
 export const Authing = new AuthenticatingConcept("users");
 export const Topicing = new TopicingConcept("topics");
 export const RespondingToTopic = new RespondingConcept("responsesToTopics");
-// export const RespondingToResponse = new RespondingConcept("responsesToResponses");
+export const RespondingToResponse = new RespondingConcept("responsesToResponses");
 export const Friending = new FriendingConcept("friends");

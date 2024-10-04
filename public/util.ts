@@ -75,6 +75,12 @@ const operations: Operation[] = [
     fields: { id: "input" },
   },
   {
+    name: "Get Responses to given target (empty for all)",
+    endpoint: "/api/responses",
+    method: "GET",
+    fields: { author: "input", id: "input" },
+  },
+  {
     name: "Get Responses to Topics (empty for all)",
     endpoint: "/api/responses/topic",
     method: "GET",
@@ -101,6 +107,36 @@ const operations: Operation[] = [
   {
     name: "Delete Response to Topic",
     endpoint: "/api/responses/topic/:id",
+    method: "DELETE",
+    fields: { id: "input" },
+  },
+  {
+    name: "Get Responses to Responses (empty for all)",
+    endpoint: "/api/responses/response",
+    method: "GET",
+    fields: { author: "input", id: "input" },
+  },
+  {
+    name: "Create Response to Response",
+    endpoint: "/api/responses/response",
+    method: "POST",
+    fields: { title: "input", content: "input", responseId: "input" },
+  },
+  {
+    name: "Update Title of Response to Response",
+    endpoint: "/api/responses/response/:id/title",
+    method: "PATCH",
+    fields: { id: "input", title: "input"}, //, options: { backgroundColor: "input" } 
+  },
+  {
+    name: "Update Content of Response to Response",
+    endpoint: "/api/responses/response/:id/content",
+    method: "PATCH",
+    fields: { id: "input", content: "input"}, //, options: { backgroundColor: "input" } 
+  },
+  {
+    name: "Delete Response to Response",
+    endpoint: "/api/responses/response/:id",
     method: "DELETE",
     fields: { id: "input" },
   },

@@ -2,7 +2,7 @@ import { ObjectId } from "mongodb";
 
 import { Router, getExpressRouter } from "./framework/router";
 
-import { Authing, Friending, RespondingToTopic, Sessioning, Topicing } from "./app";
+import { Authing, Friending, RespondingToResponse, RespondingToTopic, Sessioning, Topicing } from "./app";
 // import { ResponseOptions } from "./concepts/responding";
 import { SessionDoc } from "./concepts/sessioning";
 import Responses from "./responses";
@@ -101,11 +101,38 @@ class Routes {
     return Topicing.delete(oid);
   }
 
+  ///// RESPONDING
+  
+  @Router.get("/responses")
+  @Router.validate(z.object({ author: z.string().optional(), id: z.string().optional() }))
+  async getResponses(author?: string, id?: string) {
+    let responses;
+    if (author && !id) {
+      const authorId = (await Authing.getUserByUsername(author))._id;
+      responses = await RespondingToTopic.getByAuthor(authorId);
+      responses.push(...await RespondingToResponse.getByAuthor(authorId));
+    }
+    else if (!author && id) {
+      const oid = new ObjectId(id);
+      const responsesToTopic = await RespondingToTopic.getByTarget(oid);
+      if (responsesToTopic.length === 0) {
+        responses = await RespondingToResponse.getByTarget(oid);
+      } else {
+        responses = responsesToTopic;
+      }
+    }
+    else {
+      responses = await RespondingToResponse.getResponses();
+      responses.push(...await RespondingToTopic.getResponses());
+    }
+    return Responses.responses(responses);
+  }
+
   //// RESPONDING TO TOPICS
 
   @Router.get("/responses/topic")
   @Router.validate(z.object({ author: z.string().optional(), topic: z.string().optional() }))
-  async getResponsesToTopics(author?: string, topic?: string) {
+  async getResponsesToTopic(author?: string, topic?: string) {
     let responses;
     if (author && !topic) {
       const id = (await Authing.getUserByUsername(author))._id;
@@ -151,6 +178,64 @@ class Routes {
     const oid = new ObjectId(id);
     await RespondingToTopic.assertAuthorIsUser(oid, user);
     return RespondingToTopic.delete(oid);
+  }
+
+  //// RESPONDING TO RESPONSES
+
+  @Router.get("/responses/response")
+  @Router.validate(z.object({ author: z.string().optional(), id: z.string().optional() }))
+  async getResponsesToResponse(author?: string, id?: string) {
+    let responses;
+    if (author && !id) {
+      const authorId = (await Authing.getUserByUsername(author))._id;
+      responses = await RespondingToResponse.getByAuthor(authorId);
+    }
+    else if (!author && id) {
+      const oid = new ObjectId(id);
+      // const responsesToTopic = await RespondingToTopic.getByTarget(oid);
+      // if (responsesToTopic.length === 0) {
+      //   responses = await RespondingToResponse.getByTarget(oid);
+      // } else {
+      //   responses = responsesToTopic;
+      // }
+      responses = await RespondingToResponse.getByTarget(oid);
+    }
+    else {
+      responses = await RespondingToResponse.getResponses();
+    }
+    return Responses.responses(responses);
+  }
+
+  @Router.post("/responses/response")
+  async createResponseToResponse(session: SessionDoc, title: string, content: string, responseId: string) {
+    const user = Sessioning.getUser(session);
+    const response = new ObjectId(responseId);
+    const created = await RespondingToResponse.create(user, title, content, response);
+    return { msg: created.msg, response: await Responses.respond(created.response) };
+  }
+
+  @Router.patch("/responses/response/:id/title")
+  async updateResponseTitleToResponse(session: SessionDoc, id: string, title?: string) {
+    const user = Sessioning.getUser(session);
+    const oid = new ObjectId(id);
+    await RespondingToResponse.assertAuthorIsUser(oid, user);
+    return await RespondingToResponse.updateTitle(oid, title);
+  }
+
+  @Router.patch("/responses/response/:id/content")
+  async updateResponseToResponse(session: SessionDoc, id: string, content?: string) {
+    const user = Sessioning.getUser(session);
+    const oid = new ObjectId(id);
+    await RespondingToResponse.assertAuthorIsUser(oid, user);
+    return await RespondingToResponse.updateContent(oid, content);
+  }
+
+  @Router.delete("/responses/response/:id")
+  async deleteResponseToResponse(session: SessionDoc, id: string) {
+    const user = Sessioning.getUser(session);
+    const oid = new ObjectId(id);
+    await RespondingToResponse.assertAuthorIsUser(oid, user);
+    return RespondingToResponse.delete(oid);
   }
 
   //// FRIENDING
