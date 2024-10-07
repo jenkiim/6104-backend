@@ -158,6 +158,18 @@ const operations: Operation[] = [
     method: "PATCH",
     fields: { issue: "input", newside: "input"},
   },
+  {
+    name: "Get all Topic Labels",
+    endpoint: "/api/label/topic",
+    method: "GET",
+    fields: {  },
+  },
+  {
+    name: "Create Topic Label",
+    endpoint: "/api/label/topic/:tag",
+    method: "POST",
+    fields: { tag: "input" },
+  },
   //
   // ...
   //

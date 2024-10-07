@@ -38,14 +38,6 @@ export default class TopicingConcept {
     return { msg: "Topic deleted successfully!" };
   }
 
-  // async getTopicById(_id: ObjectId) {
-  //   const topic = await this.topics.readOne({ _id });
-  //   if (topic === null) {
-  //     throw new NotFoundError(`Topic not found!`);
-  //   }
-  //   return topic;
-  // }
-
   async getTopicByTitle(title: string) {
     const topic = await this.topics.readOne({ title });
     if (topic === null) {
@@ -65,7 +57,7 @@ export default class TopicingConcept {
     
     return topics;
   }
-  
+
   async getTopicById(_id: ObjectId) {
     const topic = await this.topics.readOne({ _id });
     if (topic === null) {

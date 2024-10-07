@@ -1,5 +1,6 @@
 import AuthenticatingConcept from "./concepts/authenticating";
 import FriendingConcept from "./concepts/friending";
+import LabelingConcept from "./concepts/labeling";
 import RespondingConcept from "./concepts/responding";
 import SessioningConcept from "./concepts/sessioning";
 import SideingConcept from "./concepts/sideing";
@@ -13,4 +14,5 @@ export const Topicing = new TopicingConcept("topics");
 export const RespondingToTopic = new RespondingConcept("responsesToTopics");
 export const RespondingToResponse = new RespondingConcept("responsesToResponses");
 export const Sideing = new SideingConcept("sides");
+export const Labeling = new LabelingConcept("labels");
 export const Friending = new FriendingConcept("friends");

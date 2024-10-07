@@ -2,7 +2,7 @@ import { ObjectId } from "mongodb";
 
 import { Router, getExpressRouter } from "./framework/router";
 
-import { Authing, Friending, RespondingToResponse, RespondingToTopic, Sessioning, Sideing, Topicing } from "./app";
+import { Authing, Friending, Labeling, RespondingToResponse, RespondingToTopic, Sessioning, Sideing, Topicing } from "./app";
 // import { ResponseOptions } from "./concepts/responding";
 import { SessionDoc } from "./concepts/sessioning";
 import Responses from "./responses";
@@ -338,12 +338,15 @@ class Routes {
 
   @Router.get("/label/topic")
   async getAllTopicLabels() {
-    // get all labels for topics
+    return Responses.topicLabels(await Labeling.getAllLabels());
   }
 
   @Router.post("/label/topic/:tag")
   async makeTopicLabel(session: SessionDoc, tag: string) {
     // make a new label for topics (must have unique tag)
+    const user = Sessioning.getUser(session);
+    const created = await Labeling.create(user, tag);
+    return { msg: created.msg, response: await Responses.topicLabel(created.label) };
   }
 
   @Router.delete("/label/topic/:id")
@@ -354,6 +357,7 @@ class Routes {
   @Router.patch("/label/topic/:id/:tag")
   async addLabelToTopic(session: SessionDoc, id: string, tag: string) {
     // attach given tag (unique so get tag object from it) to the given topic (id)
+    // validate that label is not already added to topic
   }
 
   @Router.patch("/label/topic/:id/:tag")
