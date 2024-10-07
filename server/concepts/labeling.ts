@@ -46,21 +46,19 @@ export default class LabelingConcept {
     return { msg: "Label deleted successfully!" };
   }
 
-  // async getSideByUserAndIssue(user: ObjectId, issue: ObjectId) {
-  //   return await this.labels.readMany({ user, issue });
-  // }
-
-  // async getSideByUser(user: ObjectId) {
-  //   return await this.labels.readMany({ user });
-  // }
-
-  // async update(_id: ObjectId, newside?: string) {
-  //   if (newside) {
-  //     await this.labels.partialUpdateOne({ _id }, { degree: await this.assertDegree(newside) });
-
-  //   }
-  //   return { msg: "Response successfully updated!" };
-  // }
+  async addLabelToTopic(user: ObjectId, topic: ObjectId, title: string) {
+    const label = await this.labels.readOne({ title });
+    if (!label) {
+      throw new NotFoundError(`Label ${title} does not exist!`);
+    }
+    const check_current_items = label.items.map(item => item.toString());
+    const current_items = label.items;
+    if (!check_current_items.includes(topic.toString())) {
+      current_items.push(topic);
+    }
+    await this.labels.partialUpdateOne({ title }, { items: current_items });
+    return { msg: `Topic successfully added to label ${title}!`, label: await this.labels.readOne({ title }) };
+  }
 
   async assertAuthorIsUser(title: string, user: ObjectId) {
     const label = await this.labels.readOne({ title });

@@ -101,7 +101,7 @@ export default class Responses {
     }
     const author = await Authing.getUserById(label.author);
     const items = await Topicing.idsToTitles(label.items);
-    return { ...label, author: author, items: items};
+    return { ...label, author: author.username, topicTitles: items};
   }
 
   /**

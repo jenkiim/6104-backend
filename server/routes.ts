@@ -342,37 +342,37 @@ class Routes {
   }
 
   @Router.post("/label/topic")
-  async makeTopicLabel(session: SessionDoc, tag: string) {
-    // make a new label for topics (must have unique tag)
+  async makeTopicLabel(session: SessionDoc, label: string) {
+    // make a new label for topics (must have unique label)
     const user = Sessioning.getUser(session);
-    const created = await TopicLabeling.create(user, tag);
+    const created = await TopicLabeling.create(user, label);
     return { msg: created.msg, response: await Responses.topicLabel(created.label) };
   }
 
-  @Router.delete("/label/topic/:tag")
-  async deleteTopicLabel(session: SessionDoc, tag: string) {
+  @Router.delete("/label/topic/:title")
+  async deleteTopicLabel(session: SessionDoc, title: string) {
     // delete topic label with given id
     const user = Sessioning.getUser(session);
-    const label = await TopicLabeling.getLabelByTitle(tag);
-    await TopicLabeling.assertAuthorIsUser(tag, user);
+    const label = await TopicLabeling.getLabelByTitle(title);
+    await TopicLabeling.assertAuthorIsUser(title, user);
     return TopicLabeling.delete(label._id);
   }
 
-  @Router.patch("/label/topic/:topic/:tag")
-  async addLabelToTopic(session: SessionDoc, topic: string, tag: string) {
-    // attach given tag (unique so get tag object from it) to the given topic
+  @Router.patch("/label/:label/add/topic/:topic")
+  async addLabelToTopic(session: SessionDoc, topic: string, label: string) {
+    // attach given label (unique so get label object from it) to the given topic
     // validate that label is not already added to topic
-    // const user = Sessioning.getUser(session);
-    // const topicId = (await Topicing.getTopicByTitle(topic))._id;
-    // const label = await TopicLabeling.getLabelByTitle(tag);
-    // const created = await TopicLabeling.addLabelToTopic(user, topicId, label._id
-    // return { msg: created.msg, response: await Responses.topicLabel(created.label) };
+    const user = Sessioning.getUser(session);
+    const topicId = (await Topicing.getTopicByTitle(topic))._id;
+    await Topicing.assertAuthorIsUser(topicId, user);
+    const updated = await TopicLabeling.addLabelToTopic(user, topicId, label);
+    return { msg: updated.msg, response: await Responses.topicLabel(updated.label) };
   }
 
-  @Router.patch("/label/topic/:topic/:tag")
-  async removeLabelToTopic(session: SessionDoc, topic: string, tag: string) {
-    // remove given tag (unique so get tag object from it) to the given topic (id)
-    // make sure tag exists on topic? (might be done in labeling concept)
+  @Router.patch("/label/:label/remove/topic/:topic")
+  async removeLabelToTopic(session: SessionDoc, topic: string, label: string) {
+    // remove given label (unique so get label object from it) to the given topic (id)
+    // make sure label exists on topic? (might be done in labeling concept)
   }
 
   ////// LABELING for Responses

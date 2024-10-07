@@ -166,15 +166,21 @@ const operations: Operation[] = [
   },
   {
     name: "Create Topic Label",
-    endpoint: "/api/label/topic/:tag",
+    endpoint: "/api/label/topic",
     method: "POST",
-    fields: { tag: "input" },
+    fields: { label: "input" },
   },
   {
     name: "Delete Topic Label",
-    endpoint: "/api/label/topic/:tag",
+    endpoint: "/api/label/topic/:title",
     method: "DELETE",
-    fields: { tag: "input" },
+    fields: { title: "input" },
+  },
+  {
+    name: "Add Label to Topic",
+    endpoint: "/api/label/:label/add/topic/:topic",
+    method: "PATCH",
+    fields: { label: "input", topic: "input"},
   },
   //
   // ...
