@@ -70,9 +70,9 @@ const operations: Operation[] = [
   },
   {
     name: "Delete Topic",
-    endpoint: "/api/topic/:id",
+    endpoint: "/api/topic/:title",
     method: "DELETE",
-    fields: { id: "input" },
+    fields: { title: "input" },
   },
   {
     name: "Get Responses to given target (empty for all)",
@@ -88,9 +88,9 @@ const operations: Operation[] = [
   },
   {
     name: "Create Response to Topic",
-    endpoint: "/api/responses/topic",
+    endpoint: "/api/responses/topic/:topic",
     method: "POST",
-    fields: { title: "input", content: "input", topicId: "input" },
+    fields: { title: "input", content: "input", topic: "input" },
   },
   {
     name: "Update Title of Response to Topic",
@@ -118,7 +118,7 @@ const operations: Operation[] = [
   },
   {
     name: "Create Response to Response",
-    endpoint: "/api/responses/response",
+    endpoint: "/api/responses/response/:responseId",
     method: "POST",
     fields: { title: "input", content: "input", responseId: "input" },
   },
@@ -141,22 +141,22 @@ const operations: Operation[] = [
     fields: { id: "input" },
   },
   {
-    name: "Get sides of user for issue (all if empty issueId) must specificy user",
+    name: "Get sides of user for topic (all if not topic) must specificy user",
     endpoint: "/api/side",
     method: "GET",
-    fields: { user: "input", issue: "input" },
+    fields: { user: "input", topic: "input" },
   },
   {
     name: "Create Side to Topic",
-    endpoint: "/api/side/:issue/:degree",
+    endpoint: "/api/side/:topic",
     method: "POST",
-    fields: { issue: "input", degree: "input" },
+    fields: { topic: "input", degree: "input" },
   },
   {
     name: "Update Side",
-    endpoint: "/api/side/:issue",
+    endpoint: "/api/side/:topic",
     method: "PATCH",
-    fields: { issue: "input", newside: "input"},
+    fields: { topic: "input", newside: "input"},
   },
   {
     name: "Get all Topic Labels",
@@ -168,6 +168,12 @@ const operations: Operation[] = [
     name: "Create Topic Label",
     endpoint: "/api/label/topic/:tag",
     method: "POST",
+    fields: { tag: "input" },
+  },
+  {
+    name: "Delete Topic Label",
+    endpoint: "/api/label/topic/:tag",
+    method: "DELETE",
     fields: { tag: "input" },
   },
   //

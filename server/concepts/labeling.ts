@@ -1,7 +1,7 @@
 import { ObjectId } from "mongodb";
 
 import DocCollection, { BaseDoc } from "../framework/doc";
-import { BadValuesError, NotAllowedError } from "./errors";
+import { BadValuesError, NotAllowedError, NotFoundError } from "./errors";
 
 export interface LabelDoc extends BaseDoc {
   author: ObjectId;
@@ -33,6 +33,19 @@ export default class LabelingConcept {
     return await this.labels.readMany({}, { sort: { _id: -1 } });
   }
 
+  async getLabelByTitle(title: string) {
+    const label = await this.labels.readOne({ title });
+    if (label === null) {
+      throw new NotFoundError(`Label ${title} not found!`);
+    }
+    return label;
+  }
+
+  async delete(_id: ObjectId) {
+    await this.labels.deleteOne({ _id });
+    return { msg: "Label deleted successfully!" };
+  }
+
   // async getSideByUserAndIssue(user: ObjectId, issue: ObjectId) {
   //   return await this.labels.readMany({ user, issue });
   // }
@@ -49,15 +62,15 @@ export default class LabelingConcept {
   //   return { msg: "Response successfully updated!" };
   // }
 
-  // async assertAuthorIsUser(_id: ObjectId, user: ObjectId) {
-  //   const side = await this.labels.readOne({ _id });
-  //   if (!side) {
-  //     throw new NotFoundError(`side ${_id} does not exist!`);
-  //   }
-  //   if (side.user.toString() !== user.toString()) {
-  //     throw new SideAuthorNotMatchError(user, _id);
-  //   }
-  // }
+  async assertAuthorIsUser(title: string, user: ObjectId) {
+    const label = await this.labels.readOne({ title });
+    if (!label) {
+      throw new NotFoundError(`Label ${title} does not exist!`);
+    }
+    if (label.author.toString() !== user.toString()) {
+      throw new LabelAuthorNotMatchError(user, title);
+    }
+  }
 
   // private async assertDegree(degree: string){
   //   if (!Object.values(OpinionDegree).includes(degree as OpinionDegree)) {
@@ -75,16 +88,16 @@ export default class LabelingConcept {
 
   private async assertTitleUnique(title: string) {
     if (await this.labels.readOne({ title })) {
-      throw new NotAllowedError(`User with title ${title} already exists!`);
+      throw new NotAllowedError(`Label with title ${title} already exists!`);
     }
   }
 }
 
-// export class SideAuthorNotMatchError extends NotAllowedError {
-//   constructor(
-//     public readonly author: ObjectId,
-//     public readonly _id: ObjectId,
-//   ) {
-//     super("{0} is not the author of side {1}!", author, _id);
-//   }
-// }
+export class LabelAuthorNotMatchError extends NotAllowedError {
+  constructor(
+    public readonly author: ObjectId,
+    public readonly title: string,
+  ) {
+    super("{0} is not the author of label {1}!", author, title);
+  }
+}

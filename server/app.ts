@@ -14,5 +14,6 @@ export const Topicing = new TopicingConcept("topics");
 export const RespondingToTopic = new RespondingConcept("responsesToTopics");
 export const RespondingToResponse = new RespondingConcept("responsesToResponses");
 export const Sideing = new SideingConcept("sides");
-export const Labeling = new LabelingConcept("labels");
+export const TopicLabeling = new LabelingConcept("topicLabels");
+export const ResponseLabeling = new LabelingConcept("responseLabels");
 export const Friending = new FriendingConcept("friends");

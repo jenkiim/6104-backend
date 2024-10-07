@@ -2,7 +2,7 @@ import { ObjectId } from "mongodb";
 
 import { Router, getExpressRouter } from "./framework/router";
 
-import { Authing, Friending, Labeling, RespondingToResponse, RespondingToTopic, Sessioning, Sideing, Topicing } from "./app";
+import { Authing, Friending, RespondingToResponse, RespondingToTopic, ResponseLabeling, Sessioning, Sideing, TopicLabeling, Topicing } from "./app";
 // import { ResponseOptions } from "./concepts/responding";
 import { SessionDoc } from "./concepts/sessioning";
 import Responses from "./responses";
@@ -93,10 +93,10 @@ class Routes {
     return { msg: created.msg, response: await Responses.topic(created.topic) };
   }
 
-  @Router.delete("/topic/:id")
-  async deleteTopic(session: SessionDoc, id: string) {
+  @Router.delete("/topic/:title")
+  async deleteTopic(session: SessionDoc, title: string) {
     const user = Sessioning.getUser(session);
-    const oid = new ObjectId(id);
+    const oid = (await Topicing.getTopicByTitle(title))._id;
     await Topicing.assertAuthorIsUser(oid, user);
     return Topicing.delete(oid);
   }
@@ -163,11 +163,11 @@ class Routes {
     return Responses.responsesToTopic(responses);
   }
 
-  @Router.post("/responses/topic")
-  async createResponseToTopic(session: SessionDoc, title: string, content: string, topicId: string) { //, options?: PostOptions
+  @Router.post("/responses/topic/:topic")
+  async createResponseToTopic(session: SessionDoc, title: string, content: string, topic: string) { //, options?: PostOptions
     const user = Sessioning.getUser(session);
-    const topic = new ObjectId(topicId);
-    const created = await RespondingToTopic.create(user, title, content, topic);
+    const topicObject = (await Topicing.getTopicByTitle(topic))._id;
+    const created = await RespondingToTopic.create(user, title, content, topicObject);
     return { msg: created.msg, response: await Responses.respond(created.response) };
   }
 
@@ -220,7 +220,7 @@ class Routes {
     return Responses.responses(responses);
   }
 
-  @Router.post("/responses/response")
+  @Router.post("/responses/response/:responseId") //// change thins
   async createResponseToResponse(session: SessionDoc, title: string, content: string, responseId: string) {
     const user = Sessioning.getUser(session);
     const response = new ObjectId(responseId);
@@ -304,11 +304,11 @@ class Routes {
   ///// SIDEING
 
   @Router.get("/side")
-  @Router.validate(z.object({ user: z.string(), issue: z.string().optional() }))
-  async getSidesOfUser(user: string, issue?: string) {
+  @Router.validate(z.object({ user: z.string(), topic: z.string().optional() }))
+  async getSidesOfUser(user: string, topic?: string) {
     let sides;
-    if (issue) {
-      const topicId = (await Topicing.getTopicByTitle(issue))._id;
+    if (topic) {
+      const topicId = (await Topicing.getTopicByTitle(topic))._id;
       const userId = (await Authing.getUserByUsername(user))._id;
       sides = await Sideing.getSideByUserAndIssue(userId, topicId);
     } else {
@@ -318,18 +318,18 @@ class Routes {
     return Responses.sides(sides);
   }
 
-  @Router.post("/side/:issue/:degree")
-  async createSide(session: SessionDoc, issue: string, degree: string) {
+  @Router.post("/side/:topic")
+  async createSide(session: SessionDoc, topic: string, degree: string) {
     const user = Sessioning.getUser(session);
-    const topicId = (await Topicing.getTopicByTitle(issue))._id;
+    const topicId = (await Topicing.getTopicByTitle(topic))._id;
     const created = await Sideing.create(user, topicId, degree);
     return { msg: created.msg, response: await Responses.side(created.side) };
   }
 
-  @Router.patch("/side/:issue")
-  async updateDegreeOfSide(session: SessionDoc, issue: string, newside?: string) {
+  @Router.patch("/side/:topic")
+  async updateDegreeOfSide(session: SessionDoc, topic: string, newside?: string) {
     const user = Sessioning.getUser(session);
-    const topicId = (await Topicing.getTopicByTitle(issue))._id;
+    const topicId = (await Topicing.getTopicByTitle(topic))._id;
     await Sideing.assertUserHasSide(user, topicId);
     return await Sideing.update(user, topicId, newside);
   }
@@ -338,30 +338,39 @@ class Routes {
 
   @Router.get("/label/topic")
   async getAllTopicLabels() {
-    return Responses.topicLabels(await Labeling.getAllLabels());
+    return Responses.topicLabels(await TopicLabeling.getAllLabels());
   }
 
-  @Router.post("/label/topic/:tag")
+  @Router.post("/label/topic")
   async makeTopicLabel(session: SessionDoc, tag: string) {
     // make a new label for topics (must have unique tag)
     const user = Sessioning.getUser(session);
-    const created = await Labeling.create(user, tag);
+    const created = await TopicLabeling.create(user, tag);
     return { msg: created.msg, response: await Responses.topicLabel(created.label) };
   }
 
-  @Router.delete("/label/topic/:id")
-  async deleteTopicLabel(session: SessionDoc, id: string) {
+  @Router.delete("/label/topic/:tag")
+  async deleteTopicLabel(session: SessionDoc, tag: string) {
     // delete topic label with given id
+    const user = Sessioning.getUser(session);
+    const label = await TopicLabeling.getLabelByTitle(tag);
+    await TopicLabeling.assertAuthorIsUser(tag, user);
+    return TopicLabeling.delete(label._id);
   }
 
-  @Router.patch("/label/topic/:id/:tag")
-  async addLabelToTopic(session: SessionDoc, id: string, tag: string) {
-    // attach given tag (unique so get tag object from it) to the given topic (id)
+  @Router.patch("/label/topic/:topic/:tag")
+  async addLabelToTopic(session: SessionDoc, topic: string, tag: string) {
+    // attach given tag (unique so get tag object from it) to the given topic
     // validate that label is not already added to topic
+    // const user = Sessioning.getUser(session);
+    // const topicId = (await Topicing.getTopicByTitle(topic))._id;
+    // const label = await TopicLabeling.getLabelByTitle(tag);
+    // const created = await TopicLabeling.addLabelToTopic(user, topicId, label._id
+    // return { msg: created.msg, response: await Responses.topicLabel(created.label) };
   }
 
-  @Router.patch("/label/topic/:id/:tag")
-  async removeLabelToTopic(session: SessionDoc, id: string, tag: string) {
+  @Router.patch("/label/topic/:topic/:tag")
+  async removeLabelToTopic(session: SessionDoc, topic: string, tag: string) {
     // remove given tag (unique so get tag object from it) to the given topic (id)
     // make sure tag exists on topic? (might be done in labeling concept)
   }
@@ -371,6 +380,7 @@ class Routes {
   @Router.get("/label/response")
   async getAllResponseLabels() {
     // get all labels for responses
+    return Responses.topicLabels(await ResponseLabeling.getAllLabels()); // change to responseLabels
   }
 
   @Router.post("/label/response/:tag")

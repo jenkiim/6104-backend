@@ -1,6 +1,6 @@
 import { Authing, Topicing } from "./app";
 import { AlreadyFriendsError, FriendNotFoundError, FriendRequestAlreadyExistsError, FriendRequestDoc, FriendRequestNotFoundError } from "./concepts/friending";
-import { LabelDoc } from "./concepts/labeling";
+import { LabelAuthorNotMatchError, LabelDoc } from "./concepts/labeling";
 import { ResponseAuthorNotMatchError, ResponseDoc } from "./concepts/responding";
 import { NoSideFoundForUserError, SideDoc, UserAlreadyHasTopicSideError } from "./concepts/sideing";
 import { TopicAuthorNotMatchError, TopicDoc } from "./concepts/topicing";
@@ -50,13 +50,25 @@ export default class Responses {
     return responses.map((response, i) => ({ ...response, author: authors[i] }));
   }
 
+  // /**
+  //  * Convert ResponseDoc into more readable format for the frontend by converting the author id into a username.
+  //  */
+  // static async responseToTopic(response: ResponseDoc | null) {
+  //   if (!response) {
+  //     return response;
+  //   }
+  //   const author = await Authing.getUserById(response.author);
+  //   return { ...response, author: author.username };
+  // }
+
+
   /**
    * Same as {@link responses} but for ResponseDoc that are responses to topics.
    */
   static async responsesToTopic(responses: ResponseDoc[]) {
     const authors = await Authing.idsToUsernames(responses.map((response) => response.author));
     const topics = await Topicing.idsToTitles(responses.map((response) => response.target));
-    return responses.map((response, i) => ({ ...response, author: authors[i], topic: topics[i] }));
+    return responses.map((response, i) => ({ ...response, author: authors[i], issue: topics[i] }));
   }
 
   /**
@@ -68,7 +80,7 @@ export default class Responses {
     }
     const author = await Authing.getUserById(side.user);
     const topic = await Topicing.getTopicById(side.issue);
-    return { ...side, author: author.username, topic: topic.title };
+    return { ...side, user: author.username, topic: topic.title };
   }
 
   /**
@@ -77,18 +89,19 @@ export default class Responses {
   static async sides(sides: SideDoc[]) {
     const authors = await Authing.idsToUsernames(sides.map((side) => side.user));
     const topics = await Topicing.idsToTitles(sides.map((side) => side.issue));
-    return sides.map((side, i) => ({ ...side, author: authors[i], topic: topics[i] }));
+    return sides.map((side, i) => ({ ...side, user: authors[i], topic: topics[i] }));
   }
 
   /**
-     * Convert LabelDoc into more readable format for the frontend by converting the author id into a username.
+     * Convert LabelDoc into more readable format for the frontend by converting the author id into a username and the topic ids into titles.
      */
   static async topicLabel(label: LabelDoc | null) {
     if (!label) {
       return label;
     }
+    const author = await Authing.getUserById(label.author);
     const items = await Topicing.idsToTitles(label.items);
-    return { ...label, items: items};
+    return { ...label, author: author, items: items};
   }
 
   /**
@@ -101,7 +114,8 @@ export default class Responses {
       all_topics.push(items);
     }
     // const topics = await Topicing.idsToTitles(labels.map((label) => label.items.map((item) => label.items)));
-    return labels.map((label, i) => ({ ...label, topic: all_topics[i] }));
+    const authors = await Authing.idsToUsernames(labels.map((label) => label.author));
+    return labels.map((label, i) => ({ ...label, author: authors[i], topicTitles: all_topics[i] }));
   }
 
   /**
@@ -137,6 +151,11 @@ Router.registerError(UserAlreadyHasTopicSideError, async (e) => {
   const username = (await Authing.getUserById(e.author)).username;
   const topic = (await Topicing.getTopicById(e._id)).title;
   return e.formatWith(username, topic);
+});
+
+Router.registerError(LabelAuthorNotMatchError, async (e) => {
+  const username = (await Authing.getUserById(e.author)).username;
+  return e.formatWith(username, e.title);
 });
 
 Router.registerError(FriendRequestAlreadyExistsError, async (e) => {

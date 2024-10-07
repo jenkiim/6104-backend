@@ -41,7 +41,7 @@ export default class TopicingConcept {
   async getTopicByTitle(title: string) {
     const topic = await this.topics.readOne({ title });
     if (topic === null) {
-      throw new NotFoundError(`Topic not found!`);
+      throw new NotFoundError(`Topic ${title} not found!`);
     }
     return topic;
   }
