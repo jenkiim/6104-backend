@@ -121,6 +121,16 @@ class Routes {
         responses = responsesToTopic;
       }
     }
+    else if (author && id) {
+      const authorId = (await Authing.getUserByUsername(author))._id;
+      const oid = new ObjectId(id);
+      const responsesToTopic = await RespondingToTopic.getByAuthorAndTarget(authorId, oid);
+      if (responsesToTopic.length === 0) {
+        responses = await RespondingToResponse.getByAuthorAndTarget(authorId, oid);
+      } else {
+        responses = responsesToTopic;
+      }
+    }
     else {
       responses = await RespondingToResponse.getResponses();
       responses.push(...await RespondingToTopic.getResponses());
@@ -141,6 +151,11 @@ class Routes {
     else if (!author && topic) {
       const id = (await Topicing.getTopicByTitle(topic))._id;
       responses = await RespondingToTopic.getByTarget(id);
+    }
+    else if (author && topic) {
+      const authorId = (await Authing.getUserByUsername(author))._id;
+      const topicId = (await Topicing.getTopicByTitle(topic))._id;
+      responses = await RespondingToTopic.getByAuthorAndTarget(authorId, topicId);
     }
     else {
       responses = await RespondingToTopic.getResponses();
@@ -192,12 +207,6 @@ class Routes {
     }
     else if (!author && id) {
       const oid = new ObjectId(id);
-      // const responsesToTopic = await RespondingToTopic.getByTarget(oid);
-      // if (responsesToTopic.length === 0) {
-      //   responses = await RespondingToResponse.getByTarget(oid);
-      // } else {
-      //   responses = responsesToTopic;
-      // }
       responses = await RespondingToResponse.getByTarget(oid);
     }
     else if (author && id) {
