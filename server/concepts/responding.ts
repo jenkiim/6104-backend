@@ -41,6 +41,10 @@ export default class RespondingConcept {
     return await this.responses.readMany({ target });
   }
 
+  async getByAuthorAndTarget(author: ObjectId, target: ObjectId) {
+    return await this.responses.readMany({ author, target });
+  }
+
   async updateTitle(_id: ObjectId, title?: string) { //, options?: ResponseOptions
     // Note that if content or options is undefined, those fields will *not* be updated
     // since undefined values for partialUpdateOne are ignored.

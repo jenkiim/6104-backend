@@ -2,7 +2,7 @@ import { ObjectId } from "mongodb";
 
 import { Router, getExpressRouter } from "./framework/router";
 
-import { Authing, Friending, RespondingToResponse, RespondingToTopic, Sessioning, Topicing } from "./app";
+import { Authing, Friending, RespondingToResponse, RespondingToTopic, Sessioning, Sideing, Topicing } from "./app";
 // import { ResponseOptions } from "./concepts/responding";
 import { SessionDoc } from "./concepts/sessioning";
 import Responses from "./responses";
@@ -200,6 +200,11 @@ class Routes {
       // }
       responses = await RespondingToResponse.getByTarget(oid);
     }
+    else if (author && id) {
+      const authorId = (await Authing.getUserByUsername(author))._id;
+      const oid = new ObjectId(id);
+      responses = await RespondingToResponse.getByAuthorAndTarget(authorId, oid);
+    }
     else {
       responses = await RespondingToResponse.getResponses();
     }
@@ -297,13 +302,10 @@ class Routes {
 
   @Router.post("/side/:topicid/:degree")
   async createSide(session: SessionDoc, topicid: string, degree: string) {
-    // validate degree
-    // make a new side for current user on given topic
-
-    // const user = Sessioning.getUser(session);
-    // const topic = new ObjectId(topicid);
-    // const created = await RespondingToTopic.create(user, content, topic);
-    // return { msg: created.msg, response: await Responses.respond(created.response) };
+    const user = Sessioning.getUser(session);
+    const topic = new ObjectId(topicid);
+    const created = await Sideing.create(user, topic, degree);
+    return { msg: created.msg, response: await Responses.side(created.side) };
   }
 
   @Router.patch("/side/:sideid/:newside")
@@ -442,6 +444,8 @@ class Routes {
 
   //// questions
   /// for upvoting, should i throw an error if user has upvoted already
+  /// throw error when id is not a correct id is currently: input must be a 24 character hex string, 12 byte Uint8Array, or an integer
+    /// this seems like not good
 }
 
 /** The web app. */
