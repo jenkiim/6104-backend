@@ -1,7 +1,7 @@
 import { ObjectId } from "mongodb";
 
 import DocCollection, { BaseDoc } from "../framework/doc";
-import { NotFoundError } from "./errors";
+import { NotAllowedError, NotFoundError } from "./errors";
 
 export enum OpinionDegree {
   StronglyDisagree = "Strongly Disagree",
@@ -34,54 +34,49 @@ export default class SideingConcept {
   }
 
   async create(user: ObjectId, issue: ObjectId, degreeInput: string) {
-    // await this.assertGoodTitle(title);
     const degree = await this.assertDegree(degreeInput);
-    const _id = await this.sides.createOne({ user, issue, degree});
+    await this.assertNewTopic(user, issue);
+    const _id = await this.sides.createOne({ user, issue, degree });
     return { msg: "Side successfully created!", side: await this.sides.readOne({ _id }) };
   }
 
-  async getAllSides() {
-    // Returns all sides! You might want to page for better client performance
-    return await this.sides.readMany({}, { sort: { _id: -1 } });
-  }
-
-  // async getTopicById(_id: ObjectId) {
-  //   const topic = await this.sides.readOne({ _id });
-  //   if (topic === null) {
-  //     throw new NotFoundError(`Topic not found!`);
-  //   }
-  //   return topic;
+  // async getAllSides() {
+  //   // Returns all sides! You might want to page for better client performance
+  //   return await this.sides.readMany({}, { sort: { _id: -1 } });
   // }
 
-  async getSideByTitle(title: string) {
-    const side = await this.sides.readOne({ title });
-    if (side === null) {
-      throw new NotFoundError(`Side not found!`);
-    }
-    return side;
+  async getSideByUserAndIssue(user: ObjectId, issue: ObjectId) {
+    return await this.sides.readMany({ user, issue });
   }
 
-  async searchSideTitles(title: string) {
-    const sides = await this.sides.readMany({
-      title: { $regex: title, $options: "i" } // case-insensitive
-    });
-    
-    if (!sides || sides.length === 0) {
-      throw new NotFoundError(`No sides found with the given title!`);
-    }
-    
-    return sides;
+  async getSideByUser(user: ObjectId) {
+    return await this.sides.readMany({ user });
   }
 
-//   async assertAuthorIsUser(_id: ObjectId, user: ObjectId) {
-//     const side = await this.sides.readOne({ _id });
-//     if (!side) {
-//       throw new NotFoundError(`side ${_id} does not exist!`);
-//     }
-//     if (side.author.toString() !== user.toString()) {
-//       throw new SideAuthorNotMatchError(user, _id);
-//     }
-//   }
+  async update(user: ObjectId, issue: ObjectId, newside?: string) {
+    if (newside) {
+      await this.sides.partialUpdateOne({ user, issue }, { degree: await this.assertDegree(newside) });
+
+    }
+    return { msg: "Response successfully updated!" };
+  }
+
+  async assertUserHasSide(user: ObjectId, issue: ObjectId) {
+    const side = await this.sides.readOne({ user, issue });
+    if (!side) {
+      throw new NoSideFoundForUserError(user, issue);
+    }
+  }
+
+  // async assertAuthorIsUser(issue: ObjectId, user: ObjectId) {
+  //   const side = await this.sides.readOne({ issue });
+  //   if (!side) {
+  //     throw new NotFoundError(`side ${issue} does not exist!`);
+  //   }
+  //   if (side.user.toString() !== user.toString()) {
+  //     throw new SideAuthorNotFoundError(user, issue);
+  //   }
+  // }
 
   private async assertDegree(degree: string){
     if (!Object.values(OpinionDegree).includes(degree as OpinionDegree)) {
@@ -90,18 +85,28 @@ export default class SideingConcept {
     return degree as OpinionDegree;
   }
 
-//   private async assertTitleUnique(title: string) {
-//     if (await this.sides.readOne({ title })) {
-//       throw new NotAllowedError(`User with title ${title} already exists!`);
-//     }
-//   }
-// }
+  private async assertNewTopic(user: ObjectId, issue: ObjectId) {
+    const side = await this.sides.readOne({ user, issue });
+    if (side) {
+      throw new UserAlreadyHasTopicSideError(user, issue);
+    }
+  }
+}
 
-// export class TopicAuthorNotMatchError extends NotAllowedError {
-//   constructor(
-//     public readonly author: ObjectId,
-//     public readonly _id: ObjectId,
-//   ) {
-//     super("{0} is not the author of topic {1}!", author, _id);
-//   }
+export class UserAlreadyHasTopicSideError extends NotAllowedError {
+  constructor(
+    public readonly author: ObjectId,
+    public readonly _id: ObjectId,
+  ) {
+    super("{0} already has a side for {1}!", author, _id);
+  }
+}
+
+export class NoSideFoundForUserError extends NotFoundError {
+  constructor(
+    public readonly author: ObjectId,
+    public readonly _id: ObjectId,
+  ) {
+    super("{0} doesn't have a side for topic {1}!", author, _id);
+  }
 }

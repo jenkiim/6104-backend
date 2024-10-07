@@ -141,10 +141,22 @@ const operations: Operation[] = [
     fields: { id: "input" },
   },
   {
+    name: "Get sides of user for issue (all if empty issueId) must specificy user",
+    endpoint: "/api/side",
+    method: "GET",
+    fields: { user: "input", issue: "input" },
+  },
+  {
     name: "Create Side to Topic",
-    endpoint: "/api/side/:topicid/:degree",
+    endpoint: "/api/side/:issue/:degree",
     method: "POST",
-    fields: { topicid: "input", degree: "input" },
+    fields: { issue: "input", degree: "input" },
+  },
+  {
+    name: "Update Side",
+    endpoint: "/api/side/:issue",
+    method: "PATCH",
+    fields: { issue: "input", newside: "input"},
   },
   //
   // ...

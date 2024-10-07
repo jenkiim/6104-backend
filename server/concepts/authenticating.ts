@@ -46,7 +46,7 @@ export default class AuthenticatingConcept {
   async getUserByUsername(username: string) {
     const user = await this.users.readOne({ username });
     if (user === null) {
-      throw new NotFoundError(`User not found!`);
+      throw new NotFoundError(`User ${user} not found!`);
     }
     return this.redactPassword(user);
   }

@@ -59,11 +59,26 @@ export default class TopicingConcept {
       title: { $regex: title, $options: "i" } // case-insensitive
     });
     
-    if (!topics || topics.length === 0) {
-      throw new NotFoundError(`No topics found with the given title!`);
-    }
+    // if (!topics || topics.length === 0) {
+    //   throw new NotFoundError(`No topics found with the given title!`);
+    // }
     
     return topics;
+  }
+  
+  async getTopicById(_id: ObjectId) {
+    const topic = await this.topics.readOne({ _id });
+    if (topic === null) {
+      throw new NotFoundError(`Topic ${_id} does not exist!`);
+    }
+    return topic;
+  }
+
+  async idsToTitles(ids: ObjectId[]) {
+    const topics = await this.topics.readMany({ _id: { $in: ids } });
+    // Store strings in Map because ObjectId comparison by reference is wrong
+    const idToUser = new Map(topics.map((topic) => [topic._id.toString(), topic]));
+    return ids.map((id) => idToUser.get(id.toString())?.title ?? "DELETED_TOPIC");
   }
 
   async assertAuthorIsUser(_id: ObjectId, user: ObjectId) {

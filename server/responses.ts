@@ -1,7 +1,7 @@
-import { Authing } from "./app";
+import { Authing, Topicing } from "./app";
 import { AlreadyFriendsError, FriendNotFoundError, FriendRequestAlreadyExistsError, FriendRequestDoc, FriendRequestNotFoundError } from "./concepts/friending";
 import { ResponseAuthorNotMatchError, ResponseDoc } from "./concepts/responding";
-import { SideDoc } from "./concepts/sideing";
+import { NoSideFoundForUserError, SideDoc, UserAlreadyHasTopicSideError } from "./concepts/sideing";
 import { TopicAuthorNotMatchError, TopicDoc } from "./concepts/topicing";
 import { Router } from "./framework/router";
 
@@ -50,6 +50,15 @@ export default class Responses {
   }
 
   /**
+   * Same as {@link responses} but for ResponseDoc that are responses to topics.
+   */
+  static async responsesToTopic(responses: ResponseDoc[]) {
+    const authors = await Authing.idsToUsernames(responses.map((response) => response.author));
+    const topics = await Topicing.idsToTitles(responses.map((response) => response.target));
+    return responses.map((response, i) => ({ ...response, author: authors[i], topic: topics[i] }));
+  }
+
+  /**
      * Convert SideDoc into more readable format for the frontend by converting the author id into a username.
      */
   static async side(side: SideDoc | null) {
@@ -57,7 +66,17 @@ export default class Responses {
       return side;
     }
     const author = await Authing.getUserById(side.user);
-    return { ...side, author: author.username };
+    const topic = await Topicing.getTopicById(side.issue);
+    return { ...side, author: author.username, topic: topic.title };
+  }
+
+  /**
+   * Same as {@link side} but for an array of SideDoc for improved performance.
+   */
+  static async sides(sides: SideDoc[]) {
+    const authors = await Authing.idsToUsernames(sides.map((side) => side.user));
+    const topics = await Topicing.idsToTitles(sides.map((side) => side.issue));
+    return sides.map((side, i) => ({ ...side, author: authors[i], topic: topics[i] }));
   }
 
   /**
@@ -81,6 +100,18 @@ Router.registerError(TopicAuthorNotMatchError, async (e) => {
 Router.registerError(ResponseAuthorNotMatchError, async (e) => {
   const username = (await Authing.getUserById(e.author)).username;
   return e.formatWith(username, e._id);
+});
+
+Router.registerError(NoSideFoundForUserError, async (e) => {
+  const username = (await Authing.getUserById(e.author)).username;
+  const topic = (await Topicing.getTopicById(e._id)).title;
+  return e.formatWith(username, topic);
+});
+
+Router.registerError(UserAlreadyHasTopicSideError, async (e) => {
+  const username = (await Authing.getUserById(e.author)).username;
+  const topic = (await Topicing.getTopicById(e._id)).title;
+  return e.formatWith(username, topic);
 });
 
 Router.registerError(FriendRequestAlreadyExistsError, async (e) => {

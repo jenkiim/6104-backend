@@ -103,7 +103,7 @@ class Routes {
 
   ///// RESPONDING
   
-  @Router.get("/responses")
+  @Router.get("/responses") //////// could add functionality to speciify title of topic or response in result
   @Router.validate(z.object({ author: z.string().optional(), id: z.string().optional() }))
   async getResponses(author?: string, id?: string) {
     let responses;
@@ -160,7 +160,7 @@ class Routes {
     else {
       responses = await RespondingToTopic.getResponses();
     }
-    return Responses.responses(responses);
+    return Responses.responsesToTopic(responses);
   }
 
   @Router.post("/responses/topic")
@@ -303,29 +303,35 @@ class Routes {
 
   ///// SIDEING
 
-  @Router.get("/side/:user")
-  @Router.validate(z.object({ issue: z.string().optional() }))
+  @Router.get("/side")
+  @Router.validate(z.object({ user: z.string(), issue: z.string().optional() }))
   async getSidesOfUser(user: string, issue?: string) {
-    // get sides of specified username and filter by issue if given
+    let sides;
+    if (issue) {
+      const topicId = (await Topicing.getTopicByTitle(issue))._id;
+      const userId = (await Authing.getUserByUsername(user))._id;
+      sides = await Sideing.getSideByUserAndIssue(userId, topicId);
+    } else {
+      const userId = (await Authing.getUserByUsername(user))._id;
+      sides = await Sideing.getSideByUser(userId);
+    }
+    return Responses.sides(sides);
   }
 
-  @Router.post("/side/:topicid/:degree")
-  async createSide(session: SessionDoc, topicid: string, degree: string) {
+  @Router.post("/side/:issue/:degree")
+  async createSide(session: SessionDoc, issue: string, degree: string) {
     const user = Sessioning.getUser(session);
-    const topic = new ObjectId(topicid);
-    const created = await Sideing.create(user, topic, degree);
+    const topicId = (await Topicing.getTopicByTitle(issue))._id;
+    const created = await Sideing.create(user, topicId, degree);
     return { msg: created.msg, response: await Responses.side(created.side) };
   }
 
-  @Router.patch("/side/:sideid/:newside")
-  async updateDegreeOfSide(session: SessionDoc, sideid: string, newside: string) {
-    // validate newside
-    // update the corresponding side object to have newside
-
-    // const user = Sessioning.getUser(session);
-    // const oid = new ObjectId(id);
-    // await RespondingToTopic.assertAuthorIsUser(oid, user);
-    // return await RespondingToTopic.update(oid, content); //, options
+  @Router.patch("/side/:issue")
+  async updateDegreeOfSide(session: SessionDoc, issue: string, newside?: string) {
+    const user = Sessioning.getUser(session);
+    const topicId = (await Topicing.getTopicByTitle(issue))._id;
+    await Sideing.assertUserHasSide(user, topicId);
+    return await Sideing.update(user, topicId, newside);
   }
 
   ////// LABELING for Topics
@@ -363,9 +369,9 @@ class Routes {
     // get all labels for responses
   }
 
-  @Router.post("/label/response/:title")
-  async makeResponseLabel(session: SessionDoc, title: string) {
-    // make a new label for responses (must have unique title)
+  @Router.post("/label/response/:tag")
+  async makeResponseLabel(session: SessionDoc, tag: string) {
+    // make a new label for responses (must have unique tag)
   }
 
   @Router.delete("/label/response/:id")
