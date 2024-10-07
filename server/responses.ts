@@ -1,6 +1,7 @@
-import { Authing, Topicing } from "./app";
+import { Authing } from "./app";
 import { AlreadyFriendsError, FriendNotFoundError, FriendRequestAlreadyExistsError, FriendRequestDoc, FriendRequestNotFoundError } from "./concepts/friending";
 import { ResponseAuthorNotMatchError, ResponseDoc } from "./concepts/responding";
+import { SideDoc } from "./concepts/sideing";
 import { TopicAuthorNotMatchError, TopicDoc } from "./concepts/topicing";
 import { Router } from "./framework/router";
 
@@ -46,6 +47,17 @@ export default class Responses {
   static async responses(responses: ResponseDoc[]) {
     const authors = await Authing.idsToUsernames(responses.map((response) => response.author));
     return responses.map((response, i) => ({ ...response, author: authors[i] }));
+  }
+
+  /**
+     * Convert SideDoc into more readable format for the frontend by converting the author id into a username.
+     */
+  static async side(side: SideDoc | null) {
+    if (!side) {
+      return side;
+    }
+    const author = await Authing.getUserById(side.user);
+    return { ...side, author: author.username };
   }
 
   /**

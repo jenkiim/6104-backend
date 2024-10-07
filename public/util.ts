@@ -140,6 +140,12 @@ const operations: Operation[] = [
     method: "DELETE",
     fields: { id: "input" },
   },
+  {
+    name: "Create Side to Topic",
+    endpoint: "/api/side/:topicid/:degree",
+    method: "POST",
+    fields: { topicid: "input", degree: "input" },
+  },
   //
   // ...
   //
