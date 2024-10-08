@@ -64,6 +64,56 @@ describe("Create a user and log in", () => {
   });
 });
 
+describe("Topicing", () => {
+  it("should create a user and log in", async () => {
+    const session = getEmptySession();
+
+    const created = await app.createUser(session, "barish", "1234");
+    assert(created.user);
+    await assert.rejects(app.logIn(session, "barish", "123"));
+    await app.logIn(session, "barish", "1234");
+    await assert.rejects(app.logIn(session, "barish", "1234"), "Should not be able to login while already logged-in");
+  });
+
+  it("duplicate username should fail", async () => {
+    const session = getEmptySession();
+
+    const created = await app.createUser(session, "barish", "1234");
+    assert(created.user);
+    await assert.rejects(app.createUser(session, "barish", "1234"));
+  });
+
+  it("get invalid username should fail", async () => {
+    await assert.rejects(app.getUser(""), "Username should be at least 1 character long");
+    await app.getUser("alice");
+  });
+});
+
+describe("Responding to Topics", () => {
+  it("should create a user and log in", async () => {
+    const session = getEmptySession();
+
+    const created = await app.createUser(session, "barish", "1234");
+    assert(created.user);
+    await assert.rejects(app.logIn(session, "barish", "123"));
+    await app.logIn(session, "barish", "1234");
+    await assert.rejects(app.logIn(session, "barish", "1234"), "Should not be able to login while already logged-in");
+  });
+
+  it("duplicate username should fail", async () => {
+    const session = getEmptySession();
+
+    const created = await app.createUser(session, "barish", "1234");
+    assert(created.user);
+    await assert.rejects(app.createUser(session, "barish", "1234"));
+  });
+
+  it("get invalid username should fail", async () => {
+    await assert.rejects(app.getUser(""), "Username should be at least 1 character long");
+    await app.getUser("alice");
+  });
+});
+
 /*
  * As you add more tests, remember to put them inside `describe` blocks.
  */

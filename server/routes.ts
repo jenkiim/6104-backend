@@ -220,7 +220,7 @@ class Routes {
     return Responses.responses(responses);
   }
 
-  @Router.post("/responses/response/:responseId") //// change thins
+  @Router.post("/responses/response/:responseId")
   async createResponseToResponse(session: SessionDoc, title: string, content: string, responseId: string) {
     const user = Sessioning.getUser(session);
     const response = new ObjectId(responseId);
@@ -365,7 +365,7 @@ class Routes {
     const user = Sessioning.getUser(session);
     const topicId = (await Topicing.getTopicByTitle(topic))._id;
     await Topicing.assertAuthorIsUser(topicId, user);
-    const updated = await TopicLabeling.addLabelToTopic(topicId, label);
+    const updated = await TopicLabeling.addLabelToItem(topicId, label);
     return { msg: updated.msg, response: await Responses.topicLabel(updated.label) };
   }
 
@@ -376,7 +376,7 @@ class Routes {
     const user = Sessioning.getUser(session);
     const topicId = (await Topicing.getTopicByTitle(topic))._id;
     await Topicing.assertAuthorIsUser(topicId, user);
-    const updated = await TopicLabeling.removeLabelFromTopic(topicId, label);
+    const updated = await TopicLabeling.removeLabelFromItem(topicId, label);
     return { msg: updated.msg, response: await Responses.topicLabel(updated.label) };
   }
 
@@ -385,28 +385,44 @@ class Routes {
   @Router.get("/label/response")
   async getAllResponseLabels() {
     // get all labels for responses
-    return Responses.topicLabels(await ResponseLabeling.getAllLabels()); // change to responseLabels
+    return Responses.responseLabels(await ResponseLabeling.getAllLabels());
   }
 
-  @Router.post("/label/response/:tag")
-  async makeResponseLabel(session: SessionDoc, tag: string) {
+  @Router.post("/label/response")
+  async makeResponseLabel(session: SessionDoc, label: string) {
     // make a new label for responses (must have unique tag)
+    const user = Sessioning.getUser(session);
+    const created = await ResponseLabeling.create(user, label);
+    return { msg: created.msg, response: await Responses.responseLabel(created.label) };
   }
 
-  @Router.delete("/label/response/:id")
-  async deleteResponseLabel(session: SessionDoc, id: string) {
+  @Router.delete("/label/response/:title")
+  async deleteResponseLabel(session: SessionDoc, title: string) {
     // delete response label with given id
+    const user = Sessioning.getUser(session);
+    // const responseId = new ObjectId(id);
+    const label = await ResponseLabeling.getLabelByTitle(title);
+    await ResponseLabeling.assertAuthorIsUser(title, user);
+    return ResponseLabeling.delete(label._id);
   }
 
-  @Router.patch("/label/response/:id/:tag")
-  async addLabelToResponse(session: SessionDoc, id: string, tag: string) {
+  @Router.patch("/label/:label/add/response/:id")
+  async addLabelToResponse(session: SessionDoc, label: string, id: string) {
     // attach given tag (unique so get tag object from it) to the given response (id)
+    const user = Sessioning.getUser(session);
+    const responseId = new ObjectId(id);
+    await RespondingToTopic.assertAuthorIsUser(responseId, user); ///////////////////////////// this throws error if responseId doesn't exist in RespondingToTopic, but what if it exists in respondingToResponse, so how do i make message more descriptive to say that responseId isn't a valid response to label?
+    const updated = await ResponseLabeling.addLabelToItem(responseId, label);
+    return { msg: updated.msg, response: await Responses.responseLabel(updated.label) };
   }
-
-  @Router.patch("/label/response/:id/:tag")
-  async removeLabelToResponse(session: SessionDoc, id: string, tag: string) {
+  @Router.patch("/label/:label/remove/response/:id")
+  async removeLabelToResponse(session: SessionDoc, label: string, id: string) {
     // remove given tag (unique so get tag object from it) to the given response (id)
-    // make sure tag exists on response? (might be done in labeling concept)
+    const user = Sessioning.getUser(session);
+    const responseId = new ObjectId(id);
+    await RespondingToTopic.assertAuthorIsUser(responseId, user); //////////////////////////// same as above
+    const updated = await ResponseLabeling.removeLabelFromItem(responseId, label);
+    return { msg: updated.msg, response: await Responses.responseLabel(updated.label) };
   }
 
   ////// UPVOTING for responses

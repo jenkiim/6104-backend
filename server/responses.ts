@@ -1,4 +1,4 @@
-import { Authing, Topicing } from "./app";
+import { Authing, RespondingToTopic, Topicing } from "./app";
 import { AlreadyFriendsError, FriendNotFoundError, FriendRequestAlreadyExistsError, FriendRequestDoc, FriendRequestNotFoundError } from "./concepts/friending";
 import { LabelAuthorNotMatchError, LabelDoc } from "./concepts/labeling";
 import { ResponseAuthorNotMatchError, ResponseDoc } from "./concepts/responding";
@@ -113,9 +113,33 @@ export default class Responses {
       const items = await Topicing.idsToTitles(label.items);
       all_topics.push(items);
     }
-    // const topics = await Topicing.idsToTitles(labels.map((label) => label.items.map((item) => label.items)));
     const authors = await Authing.idsToUsernames(labels.map((label) => label.author));
     return labels.map((label, i) => ({ ...label, author: authors[i], topicTitles: all_topics[i] }));
+  }
+
+  /**
+     * Convert LabelDoc into more readable format for the frontend by converting the author id into a username.
+     */
+  static async responseLabel(label: LabelDoc | null) {
+    if (!label) {
+      return label;
+    }
+    const author = await Authing.getUserById(label.author);
+    const items = await RespondingToTopic.idsToTitles(label.items);
+    return { ...label, author: author.username, responseTitles: items};
+  }
+
+  /**
+  * Same as {@link responseLabel} but for an array of LabelDoc for improved performance.
+  */
+  static async responseLabels(labels: LabelDoc[]) {
+    let all_responses = [];
+    for (const label of labels) {
+      const items = await RespondingToTopic.idsToTitles(label.items);
+      all_responses.push(items);
+    }
+    const authors = await Authing.idsToUsernames(labels.map((label) => label.author));
+    return labels.map((label, i) => ({ ...label, author: authors[i], responseTitles: all_responses[i]}));
   }
 
   /**

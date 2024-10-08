@@ -1,7 +1,7 @@
 import { ObjectId } from "mongodb";
 
 import DocCollection, { BaseDoc } from "../framework/doc";
-import { NotAllowedError, NotFoundError } from "./errors";
+import { BadValuesError, NotAllowedError, NotFoundError } from "./errors";
 
 export interface ResponseDoc extends BaseDoc {
   author: ObjectId;
@@ -24,6 +24,7 @@ export default class RespondingConcept {
   }
 
   async create(author: ObjectId, title: string, content: string, target: ObjectId) {
+    await this.assertGoodResponse(title, content);
     const _id = await this.responses.createOne({ author, title, content, target});
     return { msg: "Response successfully created!", response: await this.responses.readOne({ _id }) };
   }
@@ -43,6 +44,13 @@ export default class RespondingConcept {
 
   async getByAuthorAndTarget(author: ObjectId, target: ObjectId) {
     return await this.responses.readMany({ author, target });
+  }
+
+  async idsToTitles(ids: ObjectId[]) {
+    const responses = await this.responses.readMany({ _id: { $in: ids } });
+    // Store strings in Map because ObjectId comparison by reference is wrong
+    const idToTitle = new Map(responses.map((response) => [response._id.toString(), response]));
+    return ids.map((id) => idToTitle.get(id.toString())?.title ?? "DELETED_RESPONSE");
   }
 
   async updateTitle(_id: ObjectId, title?: string) { //, options?: ResponseOptions
@@ -72,6 +80,15 @@ export default class RespondingConcept {
     }
     if (response.author.toString() !== user.toString()) {
       throw new ResponseAuthorNotMatchError(user, _id);
+    }
+  }
+
+  private async assertGoodResponse(title: string, content: string) {
+    if (!title) {
+      throw new BadValuesError("Title must be non-empty!");
+    }
+    if (!content) {
+      throw new BadValuesError("Content must be non-empty!");
     }
   }
 }

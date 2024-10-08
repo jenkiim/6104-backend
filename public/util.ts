@@ -188,6 +188,36 @@ const operations: Operation[] = [
     method: "PATCH",
     fields: { label: "input", topic: "input"},
   },
+  {
+    name: "Get all Response Labels",
+    endpoint: "/api/label/response",
+    method: "GET",
+    fields: {  },
+  },
+  {
+    name: "Create Response Label",
+    endpoint: "/api/label/response",
+    method: "POST",
+    fields: { label: "input" },
+  },
+  {
+    name: "Delete Response Label",
+    endpoint: "/api/label/response/:title",
+    method: "DELETE",
+    fields: { title: "input" },
+  },
+  {
+    name: "Add Label to Response to Topic",
+    endpoint: "/api/label/:label/add/response/:id",
+    method: "PATCH",
+    fields: { label: "input", id: "input"},
+  },
+  {
+    name: "Remove Label from Response to Topic",
+    endpoint: "/api/label/:label/remove/response/:id",
+    method: "PATCH",
+    fields: { label: "input", id: "input"},
+  },
   //
   // ...
   //

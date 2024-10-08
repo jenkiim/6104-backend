@@ -46,35 +46,35 @@ export default class LabelingConcept {
     return { msg: "Label deleted successfully!" };
   }
 
-  async addLabelToTopic(topic: ObjectId, title: string) {
+  async addLabelToItem(item: ObjectId, title: string) {
     const label = await this.labels.readOne({ title });
     if (!label) {
       throw new LabelNotFoundError(title);
     }
     const check_current_items = label.items.map(item => item.toString());
     const updated_items = label.items;
-    if (!check_current_items.includes(topic.toString())) {
-      updated_items.push(topic);
+    if (!check_current_items.includes(item.toString())) {
+      updated_items.push(item);
     } else {
-      throw new NotAllowedError(`Label ${title} already added to topic!`);
+      throw new NotAllowedError(`Label ${title} already added to item!`);
     }
     await this.labels.partialUpdateOne({ title }, { items: updated_items });
-    return { msg: `Label ${title} successfully added to topic!`, label: await this.labels.readOne({ title }) };
+    return { msg: `Label ${title} successfully added to item!`, label: await this.labels.readOne({ title }) };
   }
 
-  async removeLabelFromTopic(topic: ObjectId, title: string) {
+  async removeLabelFromItem(item: ObjectId, title: string) {
     const label = await this.labels.readOne({ title });
     if (!label) {
       throw new LabelNotFoundError(title);
     }
     const check_current_items = label.items.map(item => item.toString());
-    if (!check_current_items.includes(topic.toString())) {
-      throw new NotAllowedError(`Label ${title} isn't attached to the topic!`);
+    if (!check_current_items.includes(item.toString())) {
+      throw new NotAllowedError(`Label ${title} isn't attached to the item!`);
     }
-    const updated_items = label.items.filter(item => item.toString() !== topic.toString());
+    const updated_items = label.items.filter(currentItem => currentItem.toString() !== item.toString());
     console.log(updated_items);
     await this.labels.partialUpdateOne({ title }, { items: updated_items });
-    return { msg: `Label ${title} successfully removed from topic!`, label: await this.labels.readOne({ title }) };
+    return { msg: `Label ${title} successfully removed from item!`, label: await this.labels.readOne({ title }) };
   }
 
   async assertAuthorIsUser(title: string, user: ObjectId) {
