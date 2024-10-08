@@ -36,7 +36,7 @@ export default class LabelingConcept {
   async getLabelByTitle(title: string) {
     const label = await this.labels.readOne({ title });
     if (label === null) {
-      throw new NotFoundError(`Label ${title} not found!`);
+      throw new LabelNotFoundError(title);
     }
     return label;
   }
@@ -46,36 +46,46 @@ export default class LabelingConcept {
     return { msg: "Label deleted successfully!" };
   }
 
-  async addLabelToTopic(user: ObjectId, topic: ObjectId, title: string) {
+  async addLabelToTopic(topic: ObjectId, title: string) {
     const label = await this.labels.readOne({ title });
     if (!label) {
-      throw new NotFoundError(`Label ${title} does not exist!`);
+      throw new LabelNotFoundError(title);
     }
     const check_current_items = label.items.map(item => item.toString());
-    const current_items = label.items;
+    const updated_items = label.items;
     if (!check_current_items.includes(topic.toString())) {
-      current_items.push(topic);
+      updated_items.push(topic);
+    } else {
+      throw new NotAllowedError(`Label ${title} already added to topic!`);
     }
-    await this.labels.partialUpdateOne({ title }, { items: current_items });
-    return { msg: `Topic successfully added to label ${title}!`, label: await this.labels.readOne({ title }) };
+    await this.labels.partialUpdateOne({ title }, { items: updated_items });
+    return { msg: `Label ${title} successfully added to topic!`, label: await this.labels.readOne({ title }) };
+  }
+
+  async removeLabelFromTopic(topic: ObjectId, title: string) {
+    const label = await this.labels.readOne({ title });
+    if (!label) {
+      throw new LabelNotFoundError(title);
+    }
+    const check_current_items = label.items.map(item => item.toString());
+    if (!check_current_items.includes(topic.toString())) {
+      throw new NotAllowedError(`Label ${title} isn't attached to the topic!`);
+    }
+    const updated_items = label.items.filter(item => item.toString() !== topic.toString());
+    console.log(updated_items);
+    await this.labels.partialUpdateOne({ title }, { items: updated_items });
+    return { msg: `Label ${title} successfully removed from topic!`, label: await this.labels.readOne({ title }) };
   }
 
   async assertAuthorIsUser(title: string, user: ObjectId) {
     const label = await this.labels.readOne({ title });
     if (!label) {
-      throw new NotFoundError(`Label ${title} does not exist!`);
+      throw new LabelNotFoundError(title);
     }
     if (label.author.toString() !== user.toString()) {
       throw new LabelAuthorNotMatchError(user, title);
     }
   }
-
-  // private async assertDegree(degree: string){
-  //   if (!Object.values(OpinionDegree).includes(degree as OpinionDegree)) {
-  //     throw new NotFoundError(`Degree ${degree} is not a valid side!`);
-  //   }
-  //   return degree as OpinionDegree;
-  // }
 
   private async assertGoodTitle(title: string) {
     if (!title) {
@@ -91,11 +101,19 @@ export default class LabelingConcept {
   }
 }
 
-export class LabelAuthorNotMatchError extends NotAllowedError {
+export class LabelAuthorNotMatchError extends NotFoundError {
   constructor(
     public readonly author: ObjectId,
     public readonly title: string,
   ) {
     super("{0} is not the author of label {1}!", author, title);
+  }
+}
+
+export class LabelNotFoundError extends NotAllowedError {
+  constructor(
+    public readonly title: string,
+  ) {
+    super(`Label ${title} does not exist!`);
   }
 }

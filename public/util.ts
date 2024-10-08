@@ -182,6 +182,12 @@ const operations: Operation[] = [
     method: "PATCH",
     fields: { label: "input", topic: "input"},
   },
+  {
+    name: "Remove Label from Topic",
+    endpoint: "/api/label/:label/remove/topic/:topic",
+    method: "PATCH",
+    fields: { label: "input", topic: "input"},
+  },
   //
   // ...
   //

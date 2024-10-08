@@ -365,7 +365,7 @@ class Routes {
     const user = Sessioning.getUser(session);
     const topicId = (await Topicing.getTopicByTitle(topic))._id;
     await Topicing.assertAuthorIsUser(topicId, user);
-    const updated = await TopicLabeling.addLabelToTopic(user, topicId, label);
+    const updated = await TopicLabeling.addLabelToTopic(topicId, label);
     return { msg: updated.msg, response: await Responses.topicLabel(updated.label) };
   }
 
@@ -373,6 +373,11 @@ class Routes {
   async removeLabelToTopic(session: SessionDoc, topic: string, label: string) {
     // remove given label (unique so get label object from it) to the given topic (id)
     // make sure label exists on topic? (might be done in labeling concept)
+    const user = Sessioning.getUser(session);
+    const topicId = (await Topicing.getTopicByTitle(topic))._id;
+    await Topicing.assertAuthorIsUser(topicId, user);
+    const updated = await TopicLabeling.removeLabelFromTopic(topicId, label);
+    return { msg: updated.msg, response: await Responses.topicLabel(updated.label) };
   }
 
   ////// LABELING for Responses
