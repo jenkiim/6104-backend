@@ -218,10 +218,130 @@ const operations: Operation[] = [
     method: "PATCH",
     fields: { label: "input", id: "input"},
   },
-  //
-  // ...
-  //
+  {
+    name: "Upvote Response",
+    endpoint: "/api/vote/upvote/:id",
+    method: "PATCH",
+    fields: { id: "input" },
+  },
+  {
+    name: "Downvote Response",
+    endpoint: "/api/vote/downvote/:id",
+    method: "PATCH",
+    fields: { id: "input" },
+  },
+  {
+    name: "Unvote Response",
+    endpoint: "/api/vote/unvote/:id",
+    method: "PATCH",
+    fields: { id: "input" },
+  },
+  {
+    name: "Get count of Response",
+    endpoint: "/api/vote/count",
+    method: "GET",
+    fields: { id: "input" },
+  },
 ];
+
+// [
+//   {
+//     "_id": "670323b261e7c50113ccd3a0",
+//     "author": "hi",
+//     "title": "another one",
+//     "content": "lolz",
+//     "target": "66ff16a406ad29cbd4b2021e",
+//     "dateCreated": "2024-10-06T23:56:34.509Z",
+//     "dateUpdated": "2024-10-06T23:56:34.509Z"
+//   },
+//   {
+//     "_id": "66ff61711a5482a346b1e333",
+//     "author": "hi",
+//     "title": "i disagree",
+//     "content": "ayo",
+//     "target": "66ff16a406ad29cbd4b2021e",
+//     "dateCreated": "2024-10-04T03:30:57.278Z",
+//     "dateUpdated": "2024-10-04T03:30:57.278Z"
+//   },
+//   {
+//     "_id": "6704b5da16b0ac1b16b6c4fa",
+//     "author": "hi",
+//     "title": null,
+//     "content": null,
+//     "target": "66ff169106ad29cbd4b2021d",
+//     "dateCreated": "2024-10-08T04:32:26.210Z",
+//     "dateUpdated": "2024-10-08T04:32:26.210Z"
+//   },
+//   {
+//     "_id": "6704b52616b0ac1b16b6c4f9",
+//     "author": "hi",
+//     "title": null,
+//     "content": null,
+//     "target": "66ff169106ad29cbd4b2021d",
+//     "dateCreated": "2024-10-08T04:29:26.787Z",
+//     "dateUpdated": "2024-10-08T04:29:26.787Z"
+//   },
+//   {
+//     "_id": "67040b582cbb3de45e0ab272",
+//     "author": "jen",
+//     "title": "lolz",
+//     "content": "anya",
+//     "target": "66ff169106ad29cbd4b2021d",
+//     "dateCreated": "2024-10-07T16:24:56.118Z",
+//     "dateUpdated": "2024-10-07T16:24:56.118Z"
+//   },
+//   {
+//     "_id": "66ff6460b2c84f92fc9b2b78",
+//     "author": "test",
+//     "title": "i agree",
+//     "content": "good",
+//     "target": "66ff61711a5482a346b1e333",
+//     "dateCreated": "2024-10-04T03:43:28.355Z",
+//     "dateUpdated": "2024-10-04T03:43:28.355Z"
+//   },
+//   {
+//     "_id": "66ff6445b2c84f92fc9b2b77",
+//     "author": "test",
+//     "title": "good",
+//     "content": "good",
+//     "target": "66ff16a406ad29cbd4b2021e",
+//     "dateCreated": "2024-10-04T03:43:01.081Z",
+//     "dateUpdated": "2024-10-04T03:43:01.081Z"
+//   },
+//   {
+//     "_id": "66ff16a406ad29cbd4b2021e",
+//     "author": "hi",
+//     "title": "bad debate",
+//     "content": "debate",
+//     "target": "66ff169106ad29cbd4b2021d",
+//     "dateCreated": "2024-10-03T22:11:48.215Z",
+//     "dateUpdated": "2024-10-03T22:15:35.683Z"
+//   },
+//   {
+//     "_id": "66fe228f288e2ee0f8fa5c24",
+//     "author": "hi",
+//     "content": "no guns",
+//     "target": "66fe2279288e2ee0f8fa5c23",
+//     "dateCreated": "2024-10-03T04:50:23.609Z",
+//     "dateUpdated": "2024-10-03T04:52:47.830Z"
+//   },
+//   {
+//     "_id": "66fe2109935bc45c397ff8df",
+//     "author": "hi",
+//     "content": "whoooooo",
+//     "target": "66fe18ec44aa5515a9ee0c5c",
+//     "dateCreated": "2024-10-03T04:43:53.054Z",
+//     "dateUpdated": "2024-10-03T04:43:53.054Z"
+//   },
+//   {
+//     "_id": "66fe2044935bc45c397ff8de",
+//     "author": "hi",
+//     "content": "loliloz",
+//     "target": "66fe18ec44aa5515a9ee0c5c",
+//     "dateCreated": "2024-10-03T04:40:36.378Z",
+//     "dateUpdated": "2024-10-03T04:40:36.378Z"
+//   }
+// ]
 
 /*
  * You should not need to edit below.
@@ -236,6 +356,7 @@ function updateResponse(code: string, response: string) {
 async function request(method: HttpMethod, endpoint: string, params?: unknown) {
   try {
     if (method === "GET" && params) {
+      console.log("Params before URLSearchParams:", params);
       endpoint += "?" + new URLSearchParams(params as Record<string, string>).toString();
       params = undefined;
     }

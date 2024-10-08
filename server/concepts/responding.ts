@@ -46,6 +46,14 @@ export default class RespondingConcept {
     return await this.responses.readMany({ author, target });
   }
 
+  async getTitle(_id: ObjectId) {
+    const current = await this.responses.readOne({ _id });
+    if (!current) {
+      throw new NotFoundError(`Response ${_id} does not exist!`);
+    }
+    return current.title;
+  }
+
   async idsToTitles(ids: ObjectId[]) {
     const responses = await this.responses.readMany({ _id: { $in: ids } });
     // Store strings in Map because ObjectId comparison by reference is wrong

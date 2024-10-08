@@ -2,7 +2,7 @@ import { ObjectId } from "mongodb";
 
 import { Router, getExpressRouter } from "./framework/router";
 
-import { Authing, Friending, RespondingToResponse, RespondingToTopic, ResponseLabeling, Sessioning, Sideing, TopicLabeling, Topicing } from "./app";
+import { Authing, RespondingToResponse, RespondingToTopic, ResponseLabeling, Sessioning, Sideing, TopicLabeling, Topicing, Upvoting } from "./app";
 // import { ResponseOptions } from "./concepts/responding";
 import { SessionDoc } from "./concepts/sessioning";
 import Responses from "./responses";
@@ -164,7 +164,7 @@ class Routes {
   }
 
   @Router.post("/responses/topic/:topic")
-  async createResponseToTopic(session: SessionDoc, title: string, content: string, topic: string) { //, options?: PostOptions
+  async createResponseToTopic(session: SessionDoc, title: string, content: string, topic: string) {
     const user = Sessioning.getUser(session);
     const topicObject = (await Topicing.getTopicByTitle(topic))._id;
     const created = await RespondingToTopic.create(user, title, content, topicObject);
@@ -172,19 +172,19 @@ class Routes {
   }
 
   @Router.patch("/responses/topic/:id/title")
-  async updateResponseTitleToTopic(session: SessionDoc, id: string, title?: string) { //, options?: PostOptions
+  async updateResponseTitleToTopic(session: SessionDoc, id: string, title?: string) {
     const user = Sessioning.getUser(session);
     const oid = new ObjectId(id);
     await RespondingToTopic.assertAuthorIsUser(oid, user);
-    return await RespondingToTopic.updateTitle(oid, title); //, options
+    return await RespondingToTopic.updateTitle(oid, title);
   }
 
   @Router.patch("/responses/topic/:id/content")
-  async updateResponseToTopic(session: SessionDoc, id: string, content?: string) { //, options?: PostOptions
+  async updateResponseToTopic(session: SessionDoc, id: string, content?: string) {
     const user = Sessioning.getUser(session);
     const oid = new ObjectId(id);
     await RespondingToTopic.assertAuthorIsUser(oid, user);
-    return await RespondingToTopic.updateContent(oid, content); //, options
+    return await RespondingToTopic.updateContent(oid, content);
   }
 
   @Router.delete("/responses/topic/:id")
@@ -250,55 +250,6 @@ class Routes {
     const oid = new ObjectId(id);
     await RespondingToResponse.assertAuthorIsUser(oid, user);
     return RespondingToResponse.delete(oid);
-  }
-
-  //// FRIENDING
-
-  @Router.get("/friends")
-  async getFriends(session: SessionDoc) {
-    const user = Sessioning.getUser(session);
-    return await Authing.idsToUsernames(await Friending.getFriends(user));
-  }
-
-  @Router.delete("/friends/:friend")
-  async removeFriend(session: SessionDoc, friend: string) {
-    const user = Sessioning.getUser(session);
-    const friendOid = (await Authing.getUserByUsername(friend))._id;
-    return await Friending.removeFriend(user, friendOid);
-  }
-
-  @Router.get("/friend/requests")
-  async getRequests(session: SessionDoc) {
-    const user = Sessioning.getUser(session);
-    return await Responses.friendRequests(await Friending.getRequests(user));
-  }
-
-  @Router.post("/friend/requests/:to")
-  async sendFriendRequest(session: SessionDoc, to: string) {
-    const user = Sessioning.getUser(session);
-    const toOid = (await Authing.getUserByUsername(to))._id;
-    return await Friending.sendRequest(user, toOid);
-  }
-
-  @Router.delete("/friend/requests/:to")
-  async removeFriendRequest(session: SessionDoc, to: string) {
-    const user = Sessioning.getUser(session);
-    const toOid = (await Authing.getUserByUsername(to))._id;
-    return await Friending.removeRequest(user, toOid);
-  }
-
-  @Router.put("/friend/accept/:from")
-  async acceptFriendRequest(session: SessionDoc, from: string) {
-    const user = Sessioning.getUser(session);
-    const fromOid = (await Authing.getUserByUsername(from))._id;
-    return await Friending.acceptRequest(fromOid, user);
-  }
-
-  @Router.put("/friend/reject/:from")
-  async rejectFriendRequest(session: SessionDoc, from: string) {
-    const user = Sessioning.getUser(session);
-    const fromOid = (await Authing.getUserByUsername(from))._id;
-    return await Friending.rejectRequest(fromOid, user);
   }
 
   ///// SIDEING
@@ -427,29 +378,46 @@ class Routes {
 
   ////// UPVOTING for responses
 
-  @Router.post("/vote/upvote/:id")
+  @Router.patch("/vote/upvote/:id")
   async upvote(session: SessionDoc, id: string) {
     // current user upvotes a response
-    // validate that user has not already upvoted for performing action
     // undo vote if was downvoting before
+    const user = Sessioning.getUser(session);
+    const oid = new ObjectId(id);
+    const title = await RespondingToTopic.getTitle(oid);
+    const upvoted = await Upvoting.upvote(oid, user, title);
+    return upvoted;
   }
 
-  @Router.post("/vote/downvote/:id")
+  @Router.patch("/vote/downvote/:id")
   async downvote(session: SessionDoc, id: string) {
     // current user downvotes a response
-    // validate that user has not already downvoted for performing action
     // undo vote if was upvoting before
+    const user = Sessioning.getUser(session);
+    const oid = new ObjectId(id);
+    const title = await RespondingToTopic.getTitle(oid);
+    const downvoted = await Upvoting.downvote(oid, user, title);
+    return downvoted;
   }
 
-  @Router.delete("/vote/unvote/:id")
+  @Router.patch("/vote/unvote/:id")
   async unvote(session: SessionDoc, id: string) {
     // take away the current user's vote on given response
     // only do this if they have upvoted or downvoted previously
+    const user = Sessioning.getUser(session);
+    const oid = new ObjectId(id);
+    const title = await RespondingToTopic.getTitle(oid);
+    const unvoted = await Upvoting.unvote(oid, user, title);
+    return unvoted;
   }
 
-  @Router.get("/vote/count/:id")
+  @Router.get("/vote/count")
   async getCount(id: string) {
     // get count (upvotes - downvotes) for a response
+    const oid = new ObjectId(id);
+    const title = await RespondingToTopic.getTitle(oid);
+    const count = await Upvoting.getCount(oid)
+    return { msg: `Count of response with title ${title} and id ${id} is ${count}`, count: count };
   }
 
   ///// SORTING
@@ -473,29 +441,23 @@ class Routes {
     // get all topics with the given tag
   }
 
-  @Router.get("/responses/:topicid/label/:tag")
+  @Router.get("/responses/topic/:topicid/label/:tag")
   async getResponsesByLabel(topicid: string, tag: string) {
     // get all responses to the given topic with the given tag
   }
 
 
   //// Get all responses on given topic with given opinion degree for home page
-  @Router.get("/responses/:topicid/:degree")
+  @Router.get("/responses/topic/:topicid/:degree")
   async getResponsesForTopicDegree(topicid: string, degree: string) {
     // get all responses to topic with given degree of opinion
   }
 
-  //// Get degree of opinion from response to topics
-  @Router.get("/responses/:id/:degree")
+  //// Get degree of opinion from response to topic
+  @Router.get("/responses/response/:id/:degree")
   async getDegreeFromResponse(id: string, degree: string) {
-    // get all responses to topic with given degree of opinion
+    // get degree of opinion from given response to topic
   }
-
-
-  //// questions
-  /// for upvoting, should i throw an error if user has upvoted already
-  /// throw error when id is not a correct id is currently: input must be a 24 character hex string, 12 byte Uint8Array, or an integer
-    /// this seems like not good
 }
 
 /** The web app. */
@@ -503,3 +465,53 @@ export const app = new Routes();
 
 /** The Express router. */
 export const appRouter = getExpressRouter(app);
+
+
+  // //// FRIENDING
+
+  // @Router.get("/friends")
+  // async getFriends(session: SessionDoc) {
+  //   const user = Sessioning.getUser(session);
+  //   return await Authing.idsToUsernames(await Friending.getFriends(user));
+  // }
+
+  // @Router.delete("/friends/:friend")
+  // async removeFriend(session: SessionDoc, friend: string) {
+  //   const user = Sessioning.getUser(session);
+  //   const friendOid = (await Authing.getUserByUsername(friend))._id;
+  //   return await Friending.removeFriend(user, friendOid);
+  // }
+
+  // @Router.get("/friend/requests")
+  // async getRequests(session: SessionDoc) {
+  //   const user = Sessioning.getUser(session);
+  //   return await Responses.friendRequests(await Friending.getRequests(user));
+  // }
+
+  // @Router.post("/friend/requests/:to")
+  // async sendFriendRequest(session: SessionDoc, to: string) {
+  //   const user = Sessioning.getUser(session);
+  //   const toOid = (await Authing.getUserByUsername(to))._id;
+  //   return await Friending.sendRequest(user, toOid);
+  // }
+
+  // @Router.delete("/friend/requests/:to")
+  // async removeFriendRequest(session: SessionDoc, to: string) {
+  //   const user = Sessioning.getUser(session);
+  //   const toOid = (await Authing.getUserByUsername(to))._id;
+  //   return await Friending.removeRequest(user, toOid);
+  // }
+
+  // @Router.put("/friend/accept/:from")
+  // async acceptFriendRequest(session: SessionDoc, from: string) {
+  //   const user = Sessioning.getUser(session);
+  //   const fromOid = (await Authing.getUserByUsername(from))._id;
+  //   return await Friending.acceptRequest(fromOid, user);
+  // }
+
+  // @Router.put("/friend/reject/:from")
+  // async rejectFriendRequest(session: SessionDoc, from: string) {
+  //   const user = Sessioning.getUser(session);
+  //   const fromOid = (await Authing.getUserByUsername(from))._id;
+  //   return await Friending.rejectRequest(fromOid, user);
+  // }
