@@ -155,19 +155,18 @@ export default class DocCollection<Schema extends BaseDoc> {
    */
 
   /**
-   * Get documents sorted by `dateUpdated`.
-   */
-  async getSortedByDate(order: "asc" | "desc" = "desc"): Promise<Schema[]> {
-    const sortOrder = order === "desc" ? -1 : 1;
-    return await this.readMany({}, { sort: { dateUpdated: sortOrder } });
-  }
-
-  /**
    * Get random documents from the collection.
    * @param limit Number of documents to return.
    */
   async getRandomDocs(limit: number): Promise<Schema[]> {
     return await this.collection.aggregate<Schema>([{ $sample: { size: limit } }]).toArray();
+  }
+
+  async getRandomDocsWithTarget(limit: number, target: ObjectId): Promise<Schema[]> {
+    return await this.collection.aggregate<Schema>([
+      { $match: { target: target } }, // Match documents where target equals the given target
+      { $sample: { size: limit } }      // Then randomly sample the matched documents
+    ]).toArray();
   }
 
   /**
@@ -182,5 +181,52 @@ export default class DocCollection<Schema extends BaseDoc> {
         { $project: { target: "$_id", responseCount: 1, _id: 0 } }  // renaming _id to target for clarity
       ])
       .toArray();
+  }
+
+  /**
+   * Get items sorted by the count of upvotes, filtered by a specific list of item IDs.
+   * @param itemIds - An array of item IDs to filter and sort by upvote count.
+   * @returns An array of objects, each containing an item and its upvote count.
+   */
+  async getSortedByUpvoteCountForItem(itemIds: ObjectId[]): Promise<ObjectId[]> {
+    const results = await this.collection.aggregate([
+      {
+        $match: { item: { $in: itemIds } }
+      },
+      {
+        $sort: { count: -1 } 
+      },
+    ]).toArray();
+    return results.map(result => result.item);
+  }
+
+  /**
+   * Get items sorted by the absolute count, filtered by a specific list of item IDs.
+   * @param itemIds - An array of item IDs to filter and sort by count.
+   * @returns An array of objects, each containing an item and its absolute count.
+   */
+  async getSortedByControversyForItems(itemIds: ObjectId[]): Promise<ObjectId[]> {
+    const results = await this.collection.aggregate([
+      {
+        $match: { item: { $in: itemIds } } // Filter by item IDs
+      },
+      {
+        $project: {
+          item: 1,
+          absoluteCount: { $abs: "$count" } // Calculate the absolute value of count
+        }
+      },
+      {
+        $sort: { absoluteCount: 1 } // Sort by absoluteCount in ascending order
+      },
+      {
+        $project: {
+          _id: 0, // Exclude the default _id field
+          item: 1 // Include only the item field in the output
+        }
+      }
+    ]).toArray();
+    
+    return results.map(result => result.item);
   }
 }

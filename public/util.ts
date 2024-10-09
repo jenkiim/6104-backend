@@ -75,12 +75,6 @@ const operations: Operation[] = [
     fields: { title: "input" },
   },
   {
-    name: "Get Responses to given target (empty for all)",
-    endpoint: "/api/responses",
-    method: "GET",
-    fields: { author: "input", id: "input" },
-  },
-  {
     name: "Get Responses to Topics (empty for all)",
     endpoint: "/api/responses/topic",
     method: "GET",
@@ -148,13 +142,13 @@ const operations: Operation[] = [
   },
   {
     name: "Create Side to Topic",
-    endpoint: "/api/side/:topic",
+    endpoint: "/api/side/new/:topic",
     method: "POST",
     fields: { topic: "input", degree: "input" },
   },
   {
     name: "Update Side",
-    endpoint: "/api/side/:topic",
+    endpoint: "/api/side/update/:topic",
     method: "PATCH",
     fields: { topic: "input", newside: "input"},
   },
@@ -250,9 +244,9 @@ const operations: Operation[] = [
   },
   {
     name: "Get all responses to topics by given sort",
-    endpoint: "/api/responses/topic/:topicid/:sort",
+    endpoint: "/api/responses/topic/:topicid/sort/:sort",
     method: "GET",
-    fields: { sort: "input" },
+    fields: { topicid: "input", sort: "input" },
   },
   {
     name: "Get all topics with label given",

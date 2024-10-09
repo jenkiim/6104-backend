@@ -73,12 +73,34 @@ export default class TopicingConcept {
     return topics;
   }
 
-  async getTopicsByNewest() {
-    return await this.topics.readMany({}, { sort: { dateUpdated: "desc" } });
-  }
-
-  async getTopicsByRandom(num: number) {
-    return await this.topics.getRandomDocs(num);
+  async getSorted(sort: string, topicsSortedByEngagement: { target: ObjectId; responseCount: number }[]) {
+    switch (sort) {
+      case "newest":
+        return await this.topics.readMany({}, { sort: { dateUpdated: "desc" } });
+      case "random":
+        return await this.topics.getRandomDocs(50);
+      case "engagement": {
+        const topicsByEngagement = [];
+        const topicsByEngagementId = new Set();
+        for (const topic of topicsSortedByEngagement) {
+          try {
+            topicsByEngagement.push(await this.getTopicById(topic.target));
+            topicsByEngagementId.add(topic.target.toString());
+          } finally {
+            continue;
+          }
+        }
+        const allTopics = await this.getAllTopics();
+        for (const topic of allTopics) {
+          if (!topicsByEngagementId.has(topic._id.toString())) {
+            topicsByEngagement.push(topic);
+          }
+        }
+        return topicsByEngagement;
+      }
+      default:
+        throw new BadValuesError(`${sort} is an invalid sort option`);
+    }
   }
 
   async assertAuthorIsUser(_id: ObjectId, user: ObjectId) {

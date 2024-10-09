@@ -26,14 +26,18 @@ export default class RespondingConcept {
   async create(author: ObjectId, title: string, content: string, target: ObjectId) {
     await this.assertGoodResponse(title, content);
     const _id = await this.responses.createOne({ author, title, content, target});
-    return { msg: "Response successfully created!", response: await this.responses.readOne({ _id }) };
+    const response = await this.responses.readOne({ _id });
+    if (!response) {
+      throw new NotFoundError(`Response wasn't created correctly!`);
+    }
+    return { msg: "Response successfully created!", response: response };
   }
 
   async getResponses() {
     // Returns all responses! You might want to page for better client performance
     return await this.responses.readMany({}, { sort: { _id: -1 } });
   }
-
+//////////////////////////////////
   async getByAuthor(author: ObjectId) {
     return await this.responses.readMany({ author });
   }
@@ -42,8 +46,16 @@ export default class RespondingConcept {
     return await this.responses.readMany({ target });
   }
 
-  async getByAuthorAndTarget(author: ObjectId, target: ObjectId) {
-    return await this.responses.readMany({ author, target });
+  async getByAuthorAndTarget(author: ObjectId | undefined, target: ObjectId | undefined) {
+    const query: { author?: ObjectId; target?: ObjectId } = { };
+    if (author !== undefined) {
+      query.author = author;
+    }
+    if (target !== undefined) {
+      query.target = target;
+    }
+
+    return await this.responses.readMany(query);
   }
 
   async getById(_id: ObjectId) {
@@ -69,6 +81,9 @@ export default class RespondingConcept {
   async updateTitle(_id: ObjectId, title?: string) {
     // Note that if content or options is undefined, those fields will *not* be updated
     // since undefined values for partialUpdateOne are ignored.
+    if (!title) {
+      throw new BadValuesError("Title must be non-empty!");
+    }
     await this.responses.partialUpdateOne({ _id }, { title });
     return { msg: "Response successfully updated!" };
   }
@@ -76,6 +91,9 @@ export default class RespondingConcept {
   async updateContent(_id: ObjectId, content?: string) {
     // Note that if content or options is undefined, those fields will *not* be updated
     // since undefined values for partialUpdateOne are ignored.
+    if (!content) {
+      throw new BadValuesError("Content must be non-empty!");
+    }
     await this.responses.partialUpdateOne({ _id }, { content });
     return { msg: "Response successfully updated!" };
   }
@@ -89,6 +107,27 @@ export default class RespondingConcept {
     return await this.responses.getSortedByResponseCount();
   }
 
+  async getSorted(sort: string, target: ObjectId, sortByUpvote: ObjectId[], sortByControversy: ObjectId[]) {
+    switch (sort) {
+      case "newest":
+        return await this.responses.readMany({ target }, { sort: { dateUpdated: "desc" } });
+      case "random":
+        return await this.responses.getRandomDocsWithTarget(50, target);
+      case "upvotes": {
+        /////// don't get responses without upvotes :(
+        return await this.idsToResponses(sortByUpvote);
+      }
+      case "downvotes": {
+        return (await this.idsToResponses(sortByUpvote)).reverse();
+      }
+      case "controversial": {
+        return await this.idsToResponses(sortByControversy);
+      }
+      default:
+        throw new BadValuesError(`${sort} is an invalid sort option`);
+    }
+  }
+
   async assertAuthorIsUser(_id: ObjectId, user: ObjectId) {
     const response = await this.responses.readOne({ _id });
     if (!response) {
@@ -97,6 +136,14 @@ export default class RespondingConcept {
     if (response.author.toString() !== user.toString()) {
       throw new ResponseAuthorNotMatchError(user, _id);
     }
+  }
+
+  async assertResponseExists(_id: ObjectId) {
+    const maybeResponse = await this.responses.readOne({ _id });
+    if (maybeResponse === null) {
+      return false;
+    }
+    return true;
   }
 
   private async assertGoodResponse(title: string, content: string) {

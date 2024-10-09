@@ -9,17 +9,6 @@ import Responses from "./responses";
 
 import { z } from "zod";
 
-// export enum Sort {
-//   Earliest = "Earliest",
-//   Disagree = "Disagree",
-//   SlightlyDisagree = "Slightly Disagree",
-//   Neutral = "Neutral",
-//   SlightlyAgree = "Slightly Agree",
-//   Agree = "Agree",
-//   StronglyAgree = "Strongly Agree",
-//   Undecided = "Undecided",
-// }
-
 /**
  * Web server routes for the app. Implements synchronizations between concepts.
  */
@@ -96,7 +85,10 @@ class Routes {
     }
     return Responses.topics(topics);
   }
-
+  /**
+     * @param title The title of the topic. Must not be empty.
+     * @param description The description of the topic. Can be empty.
+     */
   @Router.post("/topic")
   async createTopic(session: SessionDoc, title: string, description: string) {
     const user = Sessioning.getUser(session);
@@ -112,73 +104,34 @@ class Routes {
     return Topicing.delete(oid);
   }
 
-  ///// RESPONDING
-  
-  @Router.get("/responses") //////// could add functionality to speciify title of topic or response in result
-  @Router.validate(z.object({ author: z.string().optional(), id: z.string().optional() }))
-  async getResponses(author?: string, id?: string) {
-    let responses;
-    if (author && !id) {
-      const authorId = (await Authing.getUserByUsername(author))._id;
-      responses = await RespondingToTopic.getByAuthor(authorId);
-      responses.push(...await RespondingToResponse.getByAuthor(authorId));
-    }
-    else if (!author && id) {
-      const oid = new ObjectId(id);
-      const responsesToTopic = await RespondingToTopic.getByTarget(oid);
-      if (responsesToTopic.length === 0) {
-        responses = await RespondingToResponse.getByTarget(oid);
-      } else {
-        responses = responsesToTopic;
-      }
-    }
-    else if (author && id) {
-      const authorId = (await Authing.getUserByUsername(author))._id;
-      const oid = new ObjectId(id);
-      const responsesToTopic = await RespondingToTopic.getByAuthorAndTarget(authorId, oid);
-      if (responsesToTopic.length === 0) {
-        responses = await RespondingToResponse.getByAuthorAndTarget(authorId, oid);
-      } else {
-        responses = responsesToTopic;
-      }
-    }
-    else {
-      responses = await RespondingToResponse.getResponses();
-      responses.push(...await RespondingToTopic.getResponses());
-    }
-    return Responses.responses(responses);
-  }
-
   //// RESPONDING TO TOPICS
 
   @Router.get("/responses/topic")
   @Router.validate(z.object({ author: z.string().optional(), topic: z.string().optional() }))
   async getResponsesToTopic(author?: string, topic?: string) {
     let responses;
-    if (author && !topic) {
-      const id = (await Authing.getUserByUsername(author))._id;
-      responses = await RespondingToTopic.getByAuthor(id);
+    let authorId = undefined;
+    let topicId = undefined;
+    if (author) {
+      authorId = (await Authing.getUserByUsername(author))._id;
     }
-    else if (!author && topic) {
-      const id = (await Topicing.getTopicByTitle(topic))._id;
-      responses = await RespondingToTopic.getByTarget(id);
+    if (topic) {
+      topicId = (await Topicing.getTopicByTitle(topic))._id;
     }
-    else if (author && topic) {
-      const authorId = (await Authing.getUserByUsername(author))._id;
-      const topicId = (await Topicing.getTopicByTitle(topic))._id;
-      responses = await RespondingToTopic.getByAuthorAndTarget(authorId, topicId);
-    }
-    else {
-      responses = await RespondingToTopic.getResponses();
-    }
+    responses = await RespondingToTopic.getByAuthorAndTarget(authorId, topicId);
     return Responses.responsesToTopic(responses);
   }
 
+  /**
+     * @param title The title of the response. Must not be empty.
+     * @param content The content of the response. Must not be empty.
+     */
   @Router.post("/responses/topic/:topic")
   async createResponseToTopic(session: SessionDoc, title: string, content: string, topic: string) {
     const user = Sessioning.getUser(session);
     const topicObject = (await Topicing.getTopicByTitle(topic))._id;
     const created = await RespondingToTopic.create(user, title, content, topicObject);
+    await Upvoting.create(created.response._id);
     return { msg: created.msg, response: await Responses.respondToTopic(created.response) };
   }
 
@@ -212,31 +165,29 @@ class Routes {
   @Router.validate(z.object({ author: z.string().optional(), id: z.string().optional() }))
   async getResponsesToResponse(author?: string, id?: string) {
     let responses;
-    if (author && !id) {
-      const authorId = (await Authing.getUserByUsername(author))._id;
-      responses = await RespondingToResponse.getByAuthor(authorId);
+    let authorId = undefined;
+    let targetId = undefined;
+    if (author) {
+      authorId = (await Authing.getUserByUsername(author))._id;
     }
-    else if (!author && id) {
-      const oid = new ObjectId(id);
-      responses = await RespondingToResponse.getByTarget(oid);
+    if (id) {
+      targetId = new ObjectId(id);
     }
-    else if (author && id) {
-      const authorId = (await Authing.getUserByUsername(author))._id;
-      const oid = new ObjectId(id);
-      responses = await RespondingToResponse.getByAuthorAndTarget(authorId, oid);
-    }
-    else {
-      responses = await RespondingToResponse.getResponses();
-    }
-    return Responses.responses(responses); ////// format these with titles of target responses??
+    responses = await RespondingToResponse.getByAuthorAndTarget(authorId, targetId);
+    return Responses.responses(responses);
   }
 
   @Router.post("/responses/response/:responseId")
   async createResponseToResponse(session: SessionDoc, title: string, content: string, responseId: string) {
     const user = Sessioning.getUser(session);
     const response = new ObjectId(responseId);
+    const possible1 = await RespondingToTopic.assertResponseExists(response);
+    const possible2 = await RespondingToResponse.assertResponseExists(response);
+    if (!possible1 && !possible2) {
+      return { msg: "Response to respond to does not exist!" };
+    }
     const created = await RespondingToResponse.create(user, title, content, response);
-    return { msg: created.msg, response: await Responses.respond(created.response) };   ////// format these with titles of target responses??
+    return { msg: created.msg, response: await Responses.respond(created.response) };
   }
 
   @Router.patch("/responses/response/:id/title")
@@ -280,7 +231,7 @@ class Routes {
     return Responses.sides(sides);
   }
 
-  @Router.post("/side/:topic")
+  @Router.post("/side/new/:topic")
   async createSide(session: SessionDoc, topic: string, degree: string) {
     const user = Sessioning.getUser(session);
     const topicId = (await Topicing.getTopicByTitle(topic))._id;
@@ -288,7 +239,7 @@ class Routes {
     return { msg: created.msg, response: await Responses.side(created.side) };
   }
 
-  @Router.patch("/side/:topic")
+  @Router.patch("/side/update/:topic")
   async updateDegreeOfSide(session: SessionDoc, topic: string, newside?: string) {
     const user = Sessioning.getUser(session);
     const topicId = (await Topicing.getTopicByTitle(topic))._id;
@@ -360,7 +311,6 @@ class Routes {
   async deleteResponseLabel(session: SessionDoc, title: string) {
     // delete response label with given id
     const user = Sessioning.getUser(session);
-    // const responseId = new ObjectId(id);
     const label = await ResponseLabeling.getLabelByTitle(title);
     await ResponseLabeling.assertAuthorIsUser(title, user);
     return ResponseLabeling.delete(label._id);
@@ -371,16 +321,17 @@ class Routes {
     // attach given tag (unique so get tag object from it) to the given response (id)
     const user = Sessioning.getUser(session);
     const responseId = new ObjectId(id);
-    await RespondingToTopic.assertAuthorIsUser(responseId, user); ///////////////////////////// this throws error if responseId doesn't exist in RespondingToTopic, but what if it exists in respondingToResponse, so how do i make message more descriptive to say that responseId isn't a valid response to label?
+    await RespondingToTopic.assertAuthorIsUser(responseId, user);
     const updated = await ResponseLabeling.addLabelToItem(responseId, label);
     return { msg: updated.msg, response: await Responses.responseLabel(updated.label) };
   }
+
   @Router.patch("/label/:label/remove/response/:id")
   async removeLabelToResponse(session: SessionDoc, label: string, id: string) {
     // remove given tag (unique so get tag object from it) to the given response (id)
     const user = Sessioning.getUser(session);
     const responseId = new ObjectId(id);
-    await RespondingToTopic.assertAuthorIsUser(responseId, user); //////////////////////////// same as above
+    await RespondingToTopic.assertAuthorIsUser(responseId, user);
     const updated = await ResponseLabeling.removeLabelFromItem(responseId, label);
     return { msg: updated.msg, response: await Responses.responseLabel(updated.label) };
   }
@@ -391,6 +342,7 @@ class Routes {
   async upvote(session: SessionDoc, id: string) {
     // current user upvotes a response
     // undo vote if was downvoting before
+    // if was upvoting before, do nothing
     const user = Sessioning.getUser(session);
     const oid = new ObjectId(id);
     const title = (await RespondingToTopic.getById(oid)).title;
@@ -402,6 +354,7 @@ class Routes {
   async downvote(session: SessionDoc, id: string) {
     // current user downvotes a response
     // undo vote if was upvoting before
+    // if was downvoting before, do nothing
     const user = Sessioning.getUser(session);
     const oid = new ObjectId(id);
     const title = (await RespondingToTopic.getById(oid)).title;
@@ -413,6 +366,7 @@ class Routes {
   async unvote(session: SessionDoc, id: string) {
     // take away the current user's vote on given response
     // only do this if they have upvoted or downvoted previously
+    // if wasn't voting before, do nothing
     const user = Sessioning.getUser(session);
     const oid = new ObjectId(id);
     const title = (await RespondingToTopic.getById(oid)).title;
@@ -435,57 +389,21 @@ class Routes {
   async sortTopic(sort: string) {
     // sort can be by engagement or random
     // return all topics in given sorted order
-    switch (sort) {
-      case "newest":
-        return await Topicing.getTopicsByNewest();
-  
-      case "random":
-        return await Topicing.getTopicsByRandom(50);
-  
-      case "engagement": {
-        const topicsSorted = await RespondingToTopic.getSortedByResponseCount();
-        const topics = [];
-        for (const topic of topicsSorted) {
-          try {
-            topics.push(await Topicing.getTopicById(topic.target));
-          } finally {
-            continue;
-          }
-        }
-        ////////////////// not adding topics with no responses rn
-        // const allTopics = await Topicing.getAllTopics();
-        // for (const topic of allTopics) {
-        //   if (!topicsWithResponses.has(topic._id)) {
-        //     topics.push(topic);
-        //   }
-        // }
-        return topics;
-      }
-      default:
-        return { msg: `${sort} is an invalid sort option` };
-    }
+    const sortedByEngagement = await RespondingToTopic.getSortedByResponseCount();
+    const topics = await Topicing.getSorted(sort, sortedByEngagement)
+    return { msg: `Successfully sorted topics by ${sort}`, topics: topics };
   }
 
-  @Router.get("/responses/topic/:topicid/:sort")
+  @Router.get("/responses/topic/:topicid/sort/:sort")
   async sortResponsesOnTopic(topicid: string, sort: string) {
-    // sort can be by upvotes, downvotes, controversial (upvotes - downvotes), time, random
+    // sort can be by upvotes, downvotes, controversial (abs(upvotes - downvotes)), time, random
     // return responses to topic in given sorted order
-    switch (sort) {
-      case "newest":
-        return await Topicing.getTopicsByNewest();
-  
-      case "random":
-        return await Topicing.getTopicsByRandom(50);
-  
-      case "upvotes": {
-        //// do rn
-      }
-      case "downvotes": {
-
-      }
-      default:
-        return { msg: `${sort} is an invalid sort option` };
-    }
+    const topic = await Topicing.getTopicById(new ObjectId(topicid));
+    const responsesToTopic = (await RespondingToTopic.getByTarget(new ObjectId(topicid))).map(response => response._id);
+    const sortByUpvoteIds = await Upvoting.sortItemsByCount(responsesToTopic);
+    const sortByControversyIds = await Upvoting.sortItemsByControversy(responsesToTopic);
+    const responses = await RespondingToTopic.getSorted(sort, topic._id, sortByUpvoteIds, sortByControversyIds);
+    return { msg: `Successfully sorted responses to ${topic.title} by ${sort}`, topics: responses };
   }
 
   ///// FILTERING
@@ -514,23 +432,14 @@ class Routes {
   @Router.get("/responses/topic/:topic/degree/:degree")
   async getResponsesForTopicDegree(topic: string, degree: string) {
     // get all responses to topic with given degree of opinion
-    // get all responses to topic (returns ResponseDoc[])
     const topicid = (await Topicing.getTopicByTitle(topic))._id;
-    const responses = await RespondingToTopic.getByTarget(new ObjectId(topicid));
-    const results = [];
-    for (let response of responses) {
-      const user = response.author;
-      const side = await Sideing.getSideByUserAndItem(user, topicid);
-      if (side.degree === degree) {
-        results.push(response);
-      }
-    }////////////////////////////// too much logic??
-    // const results = await Promise.all(
-    //   responses.filter(async (response) => {
-    //     const side = await Sideing.getSideByUserAndIssue(response.author, topicid);
-    //     return side?.degree === degree;
-    //   })
-    // );
+    const responses = await RespondingToTopic.getByAuthorAndTarget(undefined, new ObjectId(topicid));
+    const results = await Promise.all(
+      responses.filter(async (response) => {
+        const side = await Sideing.getSideByUserAndItem(response.author, topicid);
+        return side?.degree === degree;
+      })
+    ); // filters responses to given topic by degree of opinion we want
     return { msg: `Found all responses to topic ${topic} with degree of opinion ${degree}`, responses: results };
   }
 
@@ -538,7 +447,7 @@ class Routes {
   @Router.get("/responses/response/:id/degree")
   async getDegreeFromResponse(id: string) {
     // get degree of opinion from given response to topic
-    const response = await RespondingToTopic.getById(new ObjectId(id)); ////////////// generic error??? (says response doesn't exist but it could be a response to a response)
+    const response = await RespondingToTopic.getById(new ObjectId(id));
     const user = await Authing.getUserById(response.author);
     const side = await Sideing.getSideByUserAndItem(user._id, response.target);
     return { msg: "Successfully got the side of the user on the given issue!", side: side.degree };
@@ -550,53 +459,3 @@ export const app = new Routes();
 
 /** The Express router. */
 export const appRouter = getExpressRouter(app);
-
-
-  // //// FRIENDING
-
-  // @Router.get("/friends")
-  // async getFriends(session: SessionDoc) {
-  //   const user = Sessioning.getUser(session);
-  //   return await Authing.idsToUsernames(await Friending.getFriends(user));
-  // }
-
-  // @Router.delete("/friends/:friend")
-  // async removeFriend(session: SessionDoc, friend: string) {
-  //   const user = Sessioning.getUser(session);
-  //   const friendOid = (await Authing.getUserByUsername(friend))._id;
-  //   return await Friending.removeFriend(user, friendOid);
-  // }
-
-  // @Router.get("/friend/requests")
-  // async getRequests(session: SessionDoc) {
-  //   const user = Sessioning.getUser(session);
-  //   return await Responses.friendRequests(await Friending.getRequests(user));
-  // }
-
-  // @Router.post("/friend/requests/:to")
-  // async sendFriendRequest(session: SessionDoc, to: string) {
-  //   const user = Sessioning.getUser(session);
-  //   const toOid = (await Authing.getUserByUsername(to))._id;
-  //   return await Friending.sendRequest(user, toOid);
-  // }
-
-  // @Router.delete("/friend/requests/:to")
-  // async removeFriendRequest(session: SessionDoc, to: string) {
-  //   const user = Sessioning.getUser(session);
-  //   const toOid = (await Authing.getUserByUsername(to))._id;
-  //   return await Friending.removeRequest(user, toOid);
-  // }
-
-  // @Router.put("/friend/accept/:from")
-  // async acceptFriendRequest(session: SessionDoc, from: string) {
-  //   const user = Sessioning.getUser(session);
-  //   const fromOid = (await Authing.getUserByUsername(from))._id;
-  //   return await Friending.acceptRequest(fromOid, user);
-  // }
-
-  // @Router.put("/friend/reject/:from")
-  // async rejectFriendRequest(session: SessionDoc, from: string) {
-  //   const user = Sessioning.getUser(session);
-  //   const fromOid = (await Authing.getUserByUsername(from))._id;
-  //   return await Friending.rejectRequest(fromOid, user);
-  // }

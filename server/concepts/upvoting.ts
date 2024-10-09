@@ -120,4 +120,24 @@ export default class UpvotingConcept {
     }
     return upvote.count;
   }
+
+  async sortItemsByCount(items: ObjectId[]) {
+    const itemIds = await this.upvotes.getSortedByUpvoteCountForItem(items);
+    for (let id of items) {
+      if (!itemIds.includes(id)) {
+        itemIds.push(id);
+      }
+    }
+    return itemIds;
+  }
+
+  async sortItemsByControversy(items: ObjectId[]) {
+    const itemIds = await this.upvotes.getSortedByControversyForItems(items);
+    for (let id of items) {
+      if (!itemIds.includes(id)) {
+        itemIds.push(id);
+      }
+    }
+    return itemIds;
+  }
 }
