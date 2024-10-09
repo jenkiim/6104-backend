@@ -68,6 +68,19 @@ export default class TopicingConcept {
     return ids.map((id) => idToTitle.get(id.toString())?.title ?? "DELETED_TOPIC");
   }
 
+  async idToObjects(ids: ObjectId[]) {
+    const topics = await this.topics.readMany({ _id: { $in: ids } });
+    return topics;
+  }
+
+  async getTopicsByNewest() {
+    return await this.topics.readMany({}, { sort: { dateUpdated: "desc" } });
+  }
+
+  async getTopicsByRandom(num: number) {
+    return await this.topics.getRandomDocs(num);
+  }
+
   async assertAuthorIsUser(_id: ObjectId, user: ObjectId) {
     const topic = await this.topics.readOne({ _id });
     if (!topic) {

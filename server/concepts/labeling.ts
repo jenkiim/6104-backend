@@ -77,6 +77,21 @@ export default class LabelingConcept {
     return { msg: `Label ${title} successfully removed from item!`, label: await this.labels.readOne({ title }) };
   }
 
+  async getItems(title: string) {
+    const tag = await this.labels.readOne({ title });
+    if (!tag) {
+      throw new LabelNotFoundError(title);
+    }
+    return { msg: `Successfully found all items with label ${title}!`, items: tag.items };
+  }
+  
+  async filterByLabelFromGiven(given: ObjectId[], title: string) {
+    const givenString = given.map(item => item.toString());
+    const items = (await this.getItems(title)).items;
+    const filtered_items = items.filter(item => givenString.includes(item.toString()));
+    return filtered_items;
+  }
+
   async assertAuthorIsUser(title: string, user: ObjectId) {
     const label = await this.labels.readOne({ title });
     if (!label) {

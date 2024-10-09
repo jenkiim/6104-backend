@@ -9,6 +9,17 @@ import Responses from "./responses";
 
 import { z } from "zod";
 
+// export enum Sort {
+//   Earliest = "Earliest",
+//   Disagree = "Disagree",
+//   SlightlyDisagree = "Slightly Disagree",
+//   Neutral = "Neutral",
+//   SlightlyAgree = "Slightly Agree",
+//   Agree = "Agree",
+//   StronglyAgree = "Strongly Agree",
+//   Undecided = "Undecided",
+// }
+
 /**
  * Web server routes for the app. Implements synchronizations between concepts.
  */
@@ -261,7 +272,7 @@ class Routes {
     if (topic) {
       const topicId = (await Topicing.getTopicByTitle(topic))._id;
       const userId = (await Authing.getUserByUsername(user))._id;
-      sides = await Sideing.getSideByUserAndIssue(userId, topicId);
+      sides = [await Sideing.getSideByUserAndIssue(userId, topicId)];
     } else {
       const userId = (await Authing.getUserByUsername(user))._id;
       sides = await Sideing.getSideByUser(userId);
@@ -382,7 +393,7 @@ class Routes {
     // undo vote if was downvoting before
     const user = Sessioning.getUser(session);
     const oid = new ObjectId(id);
-    const title = await RespondingToTopic.getTitle(oid);
+    const title = (await RespondingToTopic.getById(oid)).title;
     const upvoted = await Upvoting.upvote(oid, user, title);
     return upvoted;
   }
@@ -393,7 +404,7 @@ class Routes {
     // undo vote if was upvoting before
     const user = Sessioning.getUser(session);
     const oid = new ObjectId(id);
-    const title = await RespondingToTopic.getTitle(oid);
+    const title = (await RespondingToTopic.getById(oid)).title;
     const downvoted = await Upvoting.downvote(oid, user, title);
     return downvoted;
   }
@@ -404,7 +415,7 @@ class Routes {
     // only do this if they have upvoted or downvoted previously
     const user = Sessioning.getUser(session);
     const oid = new ObjectId(id);
-    const title = await RespondingToTopic.getTitle(oid);
+    const title = (await RespondingToTopic.getById(oid)).title;
     const unvoted = await Upvoting.unvote(oid, user, title);
     return unvoted;
   }
@@ -413,49 +424,111 @@ class Routes {
   async getCount(id: string) {
     // get count (upvotes - downvotes) for a response
     const oid = new ObjectId(id);
-    const title = await RespondingToTopic.getTitle(oid);
+    const title = (await RespondingToTopic.getById(oid)).title;
     const count = await Upvoting.getCount(oid)
     return { msg: `Count of response with title ${title} and id ${id} is ${count}`, count: count };
   }
 
   ///// SORTING
 
-  @Router.get("/topics/:sort")
-  async sortTopic(id: string, sort: string) {
+  @Router.get("/topics/sort")
+  async sortTopic(sort: string) {
     // sort can be by engagement or random
     // return all topics in given sorted order
-    
+    switch (sort) {
+      case "newest":
+        return await Topicing.getTopicsByNewest();
+  
+      case "random":
+        return await Topicing.getTopicsByRandom(50);
+  
+      case "engagement": {
+        const topicsSorted = await RespondingToTopic.getSortedByResponseCount();
+        const topics = [];
+        for (const topic of topicsSorted) {
+          try {
+            topics.push(await Topicing.getTopicById(topic.target));
+          } finally {
+            continue;
+          }
+        }
+        ////////////////// not adding topics with no responses rn
+        // const allTopics = await Topicing.getAllTopics();
+        // for (const topic of allTopics) {
+        //   if (!topicsWithResponses.has(topic._id)) {
+        //     topics.push(topic);
+        //   }
+        // }
+        return topics;
+      }
+      default:
+        return { msg: `${sort} is an invalid sort option` };
+    }
   }
 
-  @Router.get("/responses/:topicid/:sort")
+  @Router.get("/responses/topic/:topicid/:sort")
   async sortResponsesOnTopic(topicid: string, sort: string) {
     // sort can be by upvotes, downvotes, controversial (upvotes - downvotes), time, random?
     // return responses to topic in given sorted order
+    switch (sort) {
+      case "newest":
+        return await Topicing.getTopicsByNewest();
+  
+      case "random":
+        return await Topicing.getTopicsByRandom(50);
+  
+      case "upvotes": {
+        
+      }
+      case "downvotes": {
+
+      }
+      default:
+        return { msg: `${sort} is an invalid sort option` };
+    }
   }
 
   ///// FILTERING
 
-  @Router.get("/topics/label/:tag")
-  async getTopicsByLabel(tag: string) {
-    // get all topics with the given tag
+  @Router.get("/topics/label/:label")
+  async getTopicsByLabel(label: string) {
+    // get all topics with the given label
+    const topics = await TopicLabeling.getItems(label);
+    const allTopics = await Topicing.idToObjects(topics.items);
+    return { msg: topics.msg, topics: allTopics };
   }
 
-  @Router.get("/responses/topic/:topicid/label/:tag")
-  async getResponsesByLabel(topicid: string, tag: string) {
-    // get all responses to the given topic with the given tag
+  @Router.get("/responses/topic/:topic/label/:label")
+  async getResponsesByLabel(topic: string, label: string) {
+    // get all responses to the given topic with the given label
+    const topicid = (await Topicing.getTopicByTitle(topic))._id;
+    const responses = await RespondingToTopic.getByTarget(new ObjectId(topicid));
+    const responseIds = responses.map(response => response._id);
+    const labeledResponses = await ResponseLabeling.filterByLabelFromGiven(responseIds, label);
+    const finalResponses = await RespondingToTopic.idsToResponses(labeledResponses); // translate ids to actual responses
+    return { msg: `Found all responses to topic ${topic} labeled with ${label}`, responses: finalResponses };
   }
 
 
   //// Get all responses on given topic with given opinion degree for home page
-  @Router.get("/responses/topic/:topicid/:degree")
-  async getResponsesForTopicDegree(topicid: string, degree: string) {
+  @Router.get("/responses/topic/:topic/:degree")
+  async getResponsesForTopicDegree(topic: string, degree: string) {
     // get all responses to topic with given degree of opinion
+    // get all responses to topic (returns ResponseDoc[])
+    // for each response, get user
+    // for each user, get side
+    // if side is given degree, add to list
+    // below is kind of like a helper funciton maybe i can call???
   }
 
   //// Get degree of opinion from response to topic
-  @Router.get("/responses/response/:id/:degree")
-  async getDegreeFromResponse(id: string, degree: string) {
+  @Router.get("/responses/response/:id/degree")
+  async getDegreeFromResponse(id: string) {
     // get degree of opinion from given response to topic
+    const response = await RespondingToTopic.getById(new ObjectId(id)); ////////////// generic error??? (says response doesn't exist but it could be a response to a response)
+    const user = await Authing.getUserById(response.author);
+    const side = await Sideing.getSideByUserAndIssue(user._id, response.target);
+    return { msg: "Successfully got the side of the user on the given issue!", side: side.degree };
   }
 }
 

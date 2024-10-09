@@ -41,7 +41,11 @@ export default class SideingConcept {
   }
 
   async getSideByUserAndIssue(user: ObjectId, issue: ObjectId) {
-    return await this.sides.readMany({ user, issue });
+    const side = await this.sides.readOne({ user, issue });
+    if (!side) {
+      throw new NotFoundError(`Side for user ${user} and issue ${issue} not found!`);
+    }
+    return side;
   }
 
   async getSideByUser(user: ObjectId) {

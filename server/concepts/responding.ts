@@ -46,12 +46,12 @@ export default class RespondingConcept {
     return await this.responses.readMany({ author, target });
   }
 
-  async getTitle(_id: ObjectId) {
+  async getById(_id: ObjectId) {
     const current = await this.responses.readOne({ _id });
     if (!current) {
       throw new NotFoundError(`Response ${_id} does not exist!`);
     }
-    return current.title;
+    return current;
   }
 
   async idsToTitles(ids: ObjectId[]) {
@@ -59,6 +59,11 @@ export default class RespondingConcept {
     // Store strings in Map because ObjectId comparison by reference is wrong
     const idToTitle = new Map(responses.map((response) => [response._id.toString(), response]));
     return ids.map((id) => idToTitle.get(id.toString())?.title ?? "DELETED_RESPONSE");
+  }
+
+  async idsToResponses(ids: ObjectId[]) {
+    const responses = await this.responses.readMany({ _id: { $in: ids } });
+    return responses;
   }
 
   async updateTitle(_id: ObjectId, title?: string) {
@@ -75,10 +80,13 @@ export default class RespondingConcept {
     return { msg: "Response successfully updated!" };
   }
 
-
   async delete(_id: ObjectId) {
     await this.responses.deleteOne({ _id });
     return { msg: "Response deleted successfully!" };
+  }
+
+  async getSortedByResponseCount() {
+    return await this.responses.getSortedByResponseCount();
   }
 
   async assertAuthorIsUser(_id: ObjectId, user: ObjectId) {

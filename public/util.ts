@@ -242,6 +242,42 @@ const operations: Operation[] = [
     method: "GET",
     fields: { id: "input" },
   },
+  {
+    name: "Get all topics by given sort",
+    endpoint: "/api/topics/sort",
+    method: "GET",
+    fields: { sort: "input" },
+  },
+  {
+    name: "Get all responses to topics by given sort",
+    endpoint: "/api/responses/topic/:topicid/:sort",
+    method: "GET",
+    fields: { sort: "input" },
+  },
+  {
+    name: "Get all topics with label given",
+    endpoint: "/api/topics/label/:label",
+    method: "GET",
+    fields: { label: "input" },
+  },
+  {
+    name: "Get all responses to given topic with label given",
+    endpoint: "/api/responses/topic/:topic/label/:label",
+    method: "GET",
+    fields: { label: "input", topic: "input" },
+  },
+  {
+    name: "Get all responses to given topic with degree of opinion given",
+    endpoint: "/api/responses/topic/:topic/:degree",
+    method: "GET",
+    fields: { topic: "input", degree: "input" },
+  },
+  {
+    name: "Get degree of opinion given response to topic",
+    endpoint: "/api/responses/response/:id/degree",
+    method: "GET",
+    fields: { id: "input" },
+  },
 ];
 
 // [

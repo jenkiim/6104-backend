@@ -153,4 +153,34 @@ export default class DocCollection<Schema extends BaseDoc> {
   /*
    * You may wish to add more methods, e.g. using other MongoDB operations!
    */
+
+  /**
+   * Get documents sorted by `dateUpdated`.
+   */
+  async getSortedByDate(order: "asc" | "desc" = "desc"): Promise<Schema[]> {
+    const sortOrder = order === "desc" ? -1 : 1;
+    return await this.readMany({}, { sort: { dateUpdated: sortOrder } });
+  }
+
+  /**
+   * Get random documents from the collection.
+   * @param limit Number of documents to return.
+   */
+  async getRandomDocs(limit: number): Promise<Schema[]> {
+    return await this.collection.aggregate<Schema>([{ $sample: { size: limit } }]).toArray();
+  }
+
+  /**
+   * Get targets sorted by the count of responses for each target.
+   * @returns An array of objects, each containing a target and its response count.
+   */
+  async getSortedByResponseCount(): Promise<{ target: ObjectId; responseCount: number }[]> {
+    return await this.collection
+      .aggregate<{ target: ObjectId; responseCount: number }>([
+        { $group: { _id: "$target", responseCount: { $sum: 1 } } },
+        { $sort: { responseCount: -1 } },
+        { $project: { target: "$_id", responseCount: 1, _id: 0 } }  // renaming _id to target for clarity
+      ])
+      .toArray();
+  }
 }
