@@ -16,7 +16,7 @@ export enum OpinionDegree {
 
 export interface SideDoc extends BaseDoc {
   user: ObjectId;
-  issue: ObjectId;
+  item: ObjectId;
   degree: OpinionDegree;
 }
 
@@ -33,17 +33,17 @@ export default class SideingConcept {
     this.sides = new DocCollection<SideDoc>(collectionName);
   }
 
-  async create(user: ObjectId, issue: ObjectId, degreeInput: string) {
+  async create(user: ObjectId, item: ObjectId, degreeInput: string) {
     const degree = await this.assertDegree(degreeInput);
-    await this.assertNewTopic(user, issue);
-    const _id = await this.sides.createOne({ user, issue, degree });
+    await this.assertNewTopic(user, item);
+    const _id = await this.sides.createOne({ user, item, degree });
     return { msg: "Side successfully created!", side: await this.sides.readOne({ _id }) };
   }
 
-  async getSideByUserAndIssue(user: ObjectId, issue: ObjectId) {
-    const side = await this.sides.readOne({ user, issue });
+  async getSideByUserAndItem(user: ObjectId, item: ObjectId) {
+    const side = await this.sides.readOne({ user, item });
     if (!side) {
-      throw new NotFoundError(`Side for user ${user} and issue ${issue} not found!`);
+      throw new NotFoundError(`Side for user ${user} and item ${item} not found!`);
     }
     return side;
   }
@@ -52,18 +52,18 @@ export default class SideingConcept {
     return await this.sides.readMany({ user });
   }
 
-  async update(user: ObjectId, issue: ObjectId, newside?: string) {
+  async update(user: ObjectId, item: ObjectId, newside?: string) {
     if (newside) {
-      await this.sides.partialUpdateOne({ user, issue }, { degree: await this.assertDegree(newside) });
+      await this.sides.partialUpdateOne({ user, item }, { degree: await this.assertDegree(newside) });
 
     }
     return { msg: "Response successfully updated!" };
   }
 
-  async assertUserHasSide(user: ObjectId, issue: ObjectId) {
-    const side = await this.sides.readOne({ user, issue });
+  async assertUserHasSide(user: ObjectId, item: ObjectId) {
+    const side = await this.sides.readOne({ user, item });
     if (!side) {
-      throw new NoSideFoundForUserError(user, issue);
+      throw new NoSideFoundForUserError(user, item);
     }
   }
 
@@ -74,10 +74,10 @@ export default class SideingConcept {
     return degree as OpinionDegree;
   }
 
-  private async assertNewTopic(user: ObjectId, issue: ObjectId) {
-    const side = await this.sides.readOne({ user, issue });
+  private async assertNewTopic(user: ObjectId, item: ObjectId) {
+    const side = await this.sides.readOne({ user, item });
     if (side) {
-      throw new UserAlreadyHasTopicSideError(user, issue);
+      throw new UserAlreadyHasTopicSideError(user, item);
     }
   }
 }

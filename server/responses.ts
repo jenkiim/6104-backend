@@ -80,7 +80,7 @@ export default class Responses {
       return side;
     }
     const author = await Authing.getUserById(side.user);
-    const topic = await Topicing.getTopicById(side.issue);
+    const topic = await Topicing.getTopicById(side.item);
     return { ...side, user: author.username, topic: topic.title };
   }
 
@@ -89,7 +89,7 @@ export default class Responses {
    */
   static async sides(sides: SideDoc[]) {
     const authors = await Authing.idsToUsernames(sides.map((side) => side.user));
-    const topics = await Topicing.idsToTitles(sides.map((side) => side.issue));
+    const topics = await Topicing.idsToTitles(sides.map((side) => side.item));
     return sides.map((side, i) => ({ ...side, user: authors[i], topic: topics[i] }));
   }
 

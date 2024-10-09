@@ -272,7 +272,7 @@ class Routes {
     if (topic) {
       const topicId = (await Topicing.getTopicByTitle(topic))._id;
       const userId = (await Authing.getUserByUsername(user))._id;
-      sides = [await Sideing.getSideByUserAndIssue(userId, topicId)];
+      sides = [await Sideing.getSideByUserAndItem(userId, topicId)];
     } else {
       const userId = (await Authing.getUserByUsername(user))._id;
       sides = await Sideing.getSideByUser(userId);
@@ -468,7 +468,7 @@ class Routes {
 
   @Router.get("/responses/topic/:topicid/:sort")
   async sortResponsesOnTopic(topicid: string, sort: string) {
-    // sort can be by upvotes, downvotes, controversial (upvotes - downvotes), time, random?
+    // sort can be by upvotes, downvotes, controversial (upvotes - downvotes), time, random
     // return responses to topic in given sorted order
     switch (sort) {
       case "newest":
@@ -478,7 +478,7 @@ class Routes {
         return await Topicing.getTopicsByRandom(50);
   
       case "upvotes": {
-        
+        //// do rn
       }
       case "downvotes": {
 
@@ -505,20 +505,33 @@ class Routes {
     const responses = await RespondingToTopic.getByTarget(new ObjectId(topicid));
     const responseIds = responses.map(response => response._id);
     const labeledResponses = await ResponseLabeling.filterByLabelFromGiven(responseIds, label);
-    const finalResponses = await RespondingToTopic.idsToResponses(labeledResponses); // translate ids to actual responses
+    const finalResponses = await RespondingToTopic.idsToResponses(labeledResponses); // translates ids to actual responses
     return { msg: `Found all responses to topic ${topic} labeled with ${label}`, responses: finalResponses };
   }
 
 
   //// Get all responses on given topic with given opinion degree for home page
-  @Router.get("/responses/topic/:topic/:degree")
+  @Router.get("/responses/topic/:topic/degree/:degree")
   async getResponsesForTopicDegree(topic: string, degree: string) {
     // get all responses to topic with given degree of opinion
     // get all responses to topic (returns ResponseDoc[])
-    // for each response, get user
-    // for each user, get side
-    // if side is given degree, add to list
-    // below is kind of like a helper funciton maybe i can call???
+    const topicid = (await Topicing.getTopicByTitle(topic))._id;
+    const responses = await RespondingToTopic.getByTarget(new ObjectId(topicid));
+    const results = [];
+    for (let response of responses) {
+      const user = response.author;
+      const side = await Sideing.getSideByUserAndItem(user, topicid);
+      if (side.degree === degree) {
+        results.push(response);
+      }
+    }////////////////////////////// too much logic??
+    // const results = await Promise.all(
+    //   responses.filter(async (response) => {
+    //     const side = await Sideing.getSideByUserAndIssue(response.author, topicid);
+    //     return side?.degree === degree;
+    //   })
+    // );
+    return { msg: `Found all responses to topic ${topic} with degree of opinion ${degree}`, responses: results };
   }
 
   //// Get degree of opinion from response to topic
@@ -527,7 +540,7 @@ class Routes {
     // get degree of opinion from given response to topic
     const response = await RespondingToTopic.getById(new ObjectId(id)); ////////////// generic error??? (says response doesn't exist but it could be a response to a response)
     const user = await Authing.getUserById(response.author);
-    const side = await Sideing.getSideByUserAndIssue(user._id, response.target);
+    const side = await Sideing.getSideByUserAndItem(user._id, response.target);
     return { msg: "Successfully got the side of the user on the given issue!", side: side.degree };
   }
 }

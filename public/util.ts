@@ -96,13 +96,13 @@ const operations: Operation[] = [
     name: "Update Title of Response to Topic",
     endpoint: "/api/responses/topic/:id/title",
     method: "PATCH",
-    fields: { id: "input", title: "input"}, //, options: { backgroundColor: "input" } 
+    fields: { id: "input", title: "input"},
   },
   {
     name: "Update Content of Response to Topic",
     endpoint: "/api/responses/topic/:id/content",
     method: "PATCH",
-    fields: { id: "input", content: "input"}, //, options: { backgroundColor: "input" } 
+    fields: { id: "input", content: "input"},
   },
   {
     name: "Delete Response to Topic",
@@ -126,13 +126,13 @@ const operations: Operation[] = [
     name: "Update Title of Response to Response",
     endpoint: "/api/responses/response/:id/title",
     method: "PATCH",
-    fields: { id: "input", title: "input"}, //, options: { backgroundColor: "input" } 
+    fields: { id: "input", title: "input"},
   },
   {
     name: "Update Content of Response to Response",
     endpoint: "/api/responses/response/:id/content",
     method: "PATCH",
-    fields: { id: "input", content: "input"}, //, options: { backgroundColor: "input" } 
+    fields: { id: "input", content: "input"},
   },
   {
     name: "Delete Response to Response",
@@ -268,7 +268,7 @@ const operations: Operation[] = [
   },
   {
     name: "Get all responses to given topic with degree of opinion given",
-    endpoint: "/api/responses/topic/:topic/:degree",
+    endpoint: "/api/responses/topic/:topic/degree/:degree",
     method: "GET",
     fields: { topic: "input", degree: "input" },
   },
