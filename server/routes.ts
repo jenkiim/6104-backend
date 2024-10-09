@@ -168,7 +168,7 @@ class Routes {
     const user = Sessioning.getUser(session);
     const topicObject = (await Topicing.getTopicByTitle(topic))._id;
     const created = await RespondingToTopic.create(user, title, content, topicObject);
-    return { msg: created.msg, response: await Responses.respond(created.response) };
+    return { msg: created.msg, response: await Responses.respondToTopic(created.response) };
   }
 
   @Router.patch("/responses/topic/:id/title")
@@ -217,7 +217,7 @@ class Routes {
     else {
       responses = await RespondingToResponse.getResponses();
     }
-    return Responses.responses(responses);
+    return Responses.responses(responses); ////// format these with titles of target responses??
   }
 
   @Router.post("/responses/response/:responseId")
@@ -225,7 +225,7 @@ class Routes {
     const user = Sessioning.getUser(session);
     const response = new ObjectId(responseId);
     const created = await RespondingToResponse.create(user, title, content, response);
-    return { msg: created.msg, response: await Responses.respond(created.response) };
+    return { msg: created.msg, response: await Responses.respond(created.response) };   ////// format these with titles of target responses??
   }
 
   @Router.patch("/responses/response/:id/title")
@@ -312,7 +312,6 @@ class Routes {
   @Router.patch("/label/:label/add/topic/:topic")
   async addLabelToTopic(session: SessionDoc, topic: string, label: string) {
     // attach given label (unique so get label object from it) to the given topic
-    // validate that label is not already added to topic
     const user = Sessioning.getUser(session);
     const topicId = (await Topicing.getTopicByTitle(topic))._id;
     await Topicing.assertAuthorIsUser(topicId, user);
@@ -323,7 +322,6 @@ class Routes {
   @Router.patch("/label/:label/remove/topic/:topic")
   async removeLabelToTopic(session: SessionDoc, topic: string, label: string) {
     // remove given label (unique so get label object from it) to the given topic (id)
-    // make sure label exists on topic? (might be done in labeling concept)
     const user = Sessioning.getUser(session);
     const topicId = (await Topicing.getTopicByTitle(topic))._id;
     await Topicing.assertAuthorIsUser(topicId, user);
@@ -426,6 +424,7 @@ class Routes {
   async sortTopic(id: string, sort: string) {
     // sort can be by engagement or random
     // return all topics in given sorted order
+    
   }
 
   @Router.get("/responses/:topicid/:sort")

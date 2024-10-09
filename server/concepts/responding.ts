@@ -61,14 +61,14 @@ export default class RespondingConcept {
     return ids.map((id) => idToTitle.get(id.toString())?.title ?? "DELETED_RESPONSE");
   }
 
-  async updateTitle(_id: ObjectId, title?: string) { //, options?: ResponseOptions
+  async updateTitle(_id: ObjectId, title?: string) {
     // Note that if content or options is undefined, those fields will *not* be updated
     // since undefined values for partialUpdateOne are ignored.
     await this.responses.partialUpdateOne({ _id }, { title });
     return { msg: "Response successfully updated!" };
   }
 
-  async updateContent(_id: ObjectId, content?: string) { //, options?: ResponseOptions
+  async updateContent(_id: ObjectId, content?: string) {
     // Note that if content or options is undefined, those fields will *not* be updated
     // since undefined values for partialUpdateOne are ignored.
     await this.responses.partialUpdateOne({ _id }, { content });

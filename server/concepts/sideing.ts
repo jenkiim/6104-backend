@@ -40,11 +40,6 @@ export default class SideingConcept {
     return { msg: "Side successfully created!", side: await this.sides.readOne({ _id }) };
   }
 
-  // async getAllSides() {
-  //   // Returns all sides! You might want to page for better client performance
-  //   return await this.sides.readMany({}, { sort: { _id: -1 } });
-  // }
-
   async getSideByUserAndIssue(user: ObjectId, issue: ObjectId) {
     return await this.sides.readMany({ user, issue });
   }
@@ -67,16 +62,6 @@ export default class SideingConcept {
       throw new NoSideFoundForUserError(user, issue);
     }
   }
-
-  // async assertAuthorIsUser(issue: ObjectId, user: ObjectId) {
-  //   const side = await this.sides.readOne({ issue });
-  //   if (!side) {
-  //     throw new NotFoundError(`side ${issue} does not exist!`);
-  //   }
-  //   if (side.user.toString() !== user.toString()) {
-  //     throw new SideAuthorNotFoundError(user, issue);
-  //   }
-  // }
 
   private async assertDegree(degree: string){
     if (!Object.values(OpinionDegree).includes(degree as OpinionDegree)) {

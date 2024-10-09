@@ -50,20 +50,21 @@ export default class Responses {
     return responses.map((response, i) => ({ ...response, author: authors[i] }));
   }
 
-  // /**
-  //  * Convert ResponseDoc into more readable format for the frontend by converting the author id into a username.
-  //  */
-  // static async responseToTopic(response: ResponseDoc | null) {
-  //   if (!response) {
-  //     return response;
-  //   }
-  //   const author = await Authing.getUserById(response.author);
-  //   return { ...response, author: author.username };
-  // }
+  /**
+   * Convert ResponseDoc into more readable format for the frontend by converting the author id into a username and target id into a title.
+   */
+  static async respondToTopic(response: ResponseDoc | null) {
+    if (!response) {
+      return response;
+    }
+    const author = await Authing.getUserById(response.author);
+    const topic = await Topicing.getTopicById(response.target);
+    return { ...response, author: author.username, isse: topic.title};
+  }
 
 
   /**
-   * Same as {@link responses} but for ResponseDoc that are responses to topics.
+   * Same as {@link respondToTopic} but for an array of ResponseDoc for improved performance.
    */
   static async responsesToTopic(responses: ResponseDoc[]) {
     const authors = await Authing.idsToUsernames(responses.map((response) => response.author));
