@@ -57,7 +57,7 @@ const operations: Operation[] = [
     fields: { username: "input" },
   },
   {
-    name: "Search All Topics",
+    name: "Search All Topics by Title",
     endpoint: "/api/topics",
     method: "GET",
     fields: { search: "input" },
@@ -135,7 +135,7 @@ const operations: Operation[] = [
     fields: { id: "input" },
   },
   {
-    name: "Get sides of user for topic (all if not topic) must specificy user",
+    name: "Get sides of user for topic (all if not topic) *must specificy user*",
     endpoint: "/api/side",
     method: "GET",
     fields: { user: "input", topic: "input" },
@@ -237,13 +237,13 @@ const operations: Operation[] = [
     fields: { id: "input" },
   },
   {
-    name: "Get all topics by given sort",
+    name: "Get all topics by given sort (newest, random, engagement)",
     endpoint: "/api/topics/sort",
     method: "GET",
     fields: { sort: "input" },
   },
   {
-    name: "Get all responses to topics by given sort",
+    name: "Get all responses to topics by given sort (newest, random, upvotes, downvotes, controversial)",
     endpoint: "/api/responses/topic/:topicid/sort/:sort",
     method: "GET",
     fields: { topicid: "input", sort: "input" },
