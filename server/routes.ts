@@ -346,7 +346,14 @@ class Routes {
     // if was upvoting before, do nothing
     const user = Sessioning.getUser(session);
     const oid = new ObjectId(id);
-    const title = (await RespondingToTopic.getById(oid)).title;
+    const responseToTopic = await RespondingToTopic.inCollection(oid);
+    let title;
+    // can vote on responses to topics and responses to responses
+    if (responseToTopic) {
+      title = (await RespondingToTopic.getById(oid)).title;
+    } else {
+      title = (await RespondingToResponse.getById(oid)).title;
+    }
     const upvoted = await Upvoting.upvote(oid, user, title);
     return upvoted;
   }
@@ -358,7 +365,14 @@ class Routes {
     // if was downvoting before, do nothing
     const user = Sessioning.getUser(session);
     const oid = new ObjectId(id);
-    const title = (await RespondingToTopic.getById(oid)).title;
+    const responseToTopic = await RespondingToTopic.inCollection(oid);
+    let title;
+    // can vote on responses to topics and responses to responses
+    if (responseToTopic) {
+      title = (await RespondingToTopic.getById(oid)).title;
+    } else {
+      title = (await RespondingToResponse.getById(oid)).title;
+    }
     const downvoted = await Upvoting.downvote(oid, user, title);
     return downvoted;
   }
@@ -370,7 +384,14 @@ class Routes {
     // if wasn't voting before, do nothing
     const user = Sessioning.getUser(session);
     const oid = new ObjectId(id);
-    const title = (await RespondingToTopic.getById(oid)).title;
+    const responseToTopic = await RespondingToTopic.inCollection(oid);
+    let title;
+    // can vote on responses to topics and responses to responses
+    if (responseToTopic) {
+      title = (await RespondingToTopic.getById(oid)).title;
+    } else {
+      title = (await RespondingToResponse.getById(oid)).title;
+    }
     const unvoted = await Upvoting.unvote(oid, user, title);
     return unvoted;
   }
@@ -379,7 +400,14 @@ class Routes {
   async getCount(id: string) {
     // get count (upvotes - downvotes) for a response
     const oid = new ObjectId(id);
-    const title = (await RespondingToTopic.getById(oid)).title;
+    const responseToTopic = await RespondingToTopic.inCollection(oid);
+    let title;
+    // can vote on responses to topics and responses to responses
+    if (responseToTopic) {
+      title = (await RespondingToTopic.getById(oid)).title;
+    } else {
+      title = (await RespondingToResponse.getById(oid)).title;
+    }
     const count = await Upvoting.getCount(oid)
     return { msg: `Count of response with title ${title} and id ${id} is ${count}`, count: count };
   }

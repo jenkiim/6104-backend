@@ -128,6 +128,15 @@ export default class RespondingConcept {
     }
   }
 
+  async inCollection(_id: ObjectId) {
+    const response = await this.responses.readOne({ _id });
+    if (response) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
   async assertAuthorIsUser(_id: ObjectId, user: ObjectId) {
     const response = await this.responses.readOne({ _id });
     if (!response) {
