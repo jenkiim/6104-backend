@@ -122,7 +122,7 @@ export default class TopicingConcept {
 
   private async assertTitleUnique(title: string) {
     if (await this.topics.readOne({ title })) {
-      throw new NotAllowedError(`User with title ${title} already exists!`);
+      throw new NotAllowedError(`Topic with title ${title} already exists!`);
     }
   }
 }

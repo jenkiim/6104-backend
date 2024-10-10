@@ -130,6 +130,7 @@ class Routes {
   async createResponseToTopic(session: SessionDoc, title: string, content: string, topic: string) {
     const user = Sessioning.getUser(session);
     const topicObject = (await Topicing.getTopicByTitle(topic))._id;
+    await Sideing.assertUserHasSide(user, topicObject);
     const created = await RespondingToTopic.create(user, title, content, topicObject);
     await Upvoting.create(created.response._id);
     return { msg: created.msg, response: await Responses.respondToTopic(created.response) };
@@ -162,25 +163,25 @@ class Routes {
   //// RESPONDING TO RESPONSES
 
   @Router.get("/responses/response")
-  @Router.validate(z.object({ author: z.string().optional(), id: z.string().optional() }))
-  async getResponsesToResponse(author?: string, id?: string) {
+  @Router.validate(z.object({ author: z.string().optional(), targetId: z.string().optional() }))
+  async getResponsesToResponse(author?: string, targetId?: string) {
     let responses;
     let authorId = undefined;
-    let targetId = undefined;
+    let targetOid = undefined;
     if (author) {
       authorId = (await Authing.getUserByUsername(author))._id;
     }
-    if (id) {
-      targetId = new ObjectId(id);
+    if (targetId) {
+      targetOid = new ObjectId(targetId);
     }
-    responses = await RespondingToResponse.getByAuthorAndTarget(authorId, targetId);
+    responses = await RespondingToResponse.getByAuthorAndTarget(authorId, targetOid);
     return Responses.responses(responses);
   }
 
-  @Router.post("/responses/response/:responseId")
-  async createResponseToResponse(session: SessionDoc, title: string, content: string, responseId: string) {
+  @Router.post("/responses/response/:targetId")
+  async createResponseToResponse(session: SessionDoc, title: string, content: string, targetId: string) {
     const user = Sessioning.getUser(session);
-    const response = new ObjectId(responseId);
+    const response = new ObjectId(targetId);
     const possible1 = await RespondingToTopic.assertResponseExists(response);
     const possible2 = await RespondingToResponse.assertResponseExists(response);
     if (!possible1 && !possible2) {

@@ -108,13 +108,13 @@ const operations: Operation[] = [
     name: "Get Responses to Responses (empty for all)",
     endpoint: "/api/responses/response",
     method: "GET",
-    fields: { author: "input", id: "input" },
+    fields: { author: "input", targetId: "input" },
   },
   {
     name: "Create Response to Response",
-    endpoint: "/api/responses/response/:responseId",
+    endpoint: "/api/responses/response/:targetId",
     method: "POST",
-    fields: { title: "input", content: "input", responseId: "input" },
+    fields: { title: "input", content: "input", targetId: "input" },
   },
   {
     name: "Update Title of Response to Response",
@@ -141,7 +141,7 @@ const operations: Operation[] = [
     fields: { user: "input", topic: "input" },
   },
   {
-    name: "Create Side to Topic",
+    name: "Create Side to Topic (possible degrees: Strongly Disagree, Disagree, Slightly Disagree, Neutral, Slightly Agree, Agree, Strongly Agree, Undecided)",
     endpoint: "/api/side/new/:topic",
     method: "POST",
     fields: { topic: "input", degree: "input" },
@@ -213,25 +213,25 @@ const operations: Operation[] = [
     fields: { label: "input", id: "input"},
   },
   {
-    name: "Upvote Response",
+    name: "Set vote to response to upvote",
     endpoint: "/api/vote/upvote/:id",
     method: "PATCH",
     fields: { id: "input" },
   },
   {
-    name: "Downvote Response",
+    name: "Set vote to response to downvote",
     endpoint: "/api/vote/downvote/:id",
     method: "PATCH",
     fields: { id: "input" },
   },
   {
-    name: "Unvote Response",
+    name: "Set vote to response to not voting anymore",
     endpoint: "/api/vote/unvote/:id",
     method: "PATCH",
     fields: { id: "input" },
   },
   {
-    name: "Get count of Response",
+    name: "Get count of response (upvotes - downvotes)",
     endpoint: "/api/vote/count",
     method: "GET",
     fields: { id: "input" },
@@ -255,13 +255,13 @@ const operations: Operation[] = [
     fields: { label: "input" },
   },
   {
-    name: "Get all responses to given topic with label given",
+    name: "Get all responses to given topic with label",
     endpoint: "/api/responses/topic/:topic/label/:label",
     method: "GET",
     fields: { label: "input", topic: "input" },
   },
   {
-    name: "Get all responses to given topic with degree of opinion given",
+    name: "Get all responses to given topic with degree of opinion",
     endpoint: "/api/responses/topic/:topic/degree/:degree",
     method: "GET",
     fields: { topic: "input", degree: "input" },
@@ -273,105 +273,6 @@ const operations: Operation[] = [
     fields: { id: "input" },
   },
 ];
-
-// [
-//   {
-//     "_id": "670323b261e7c50113ccd3a0",
-//     "author": "hi",
-//     "title": "another one",
-//     "content": "lolz",
-//     "target": "66ff16a406ad29cbd4b2021e",
-//     "dateCreated": "2024-10-06T23:56:34.509Z",
-//     "dateUpdated": "2024-10-06T23:56:34.509Z"
-//   },
-//   {
-//     "_id": "66ff61711a5482a346b1e333",
-//     "author": "hi",
-//     "title": "i disagree",
-//     "content": "ayo",
-//     "target": "66ff16a406ad29cbd4b2021e",
-//     "dateCreated": "2024-10-04T03:30:57.278Z",
-//     "dateUpdated": "2024-10-04T03:30:57.278Z"
-//   },
-//   {
-//     "_id": "6704b5da16b0ac1b16b6c4fa",
-//     "author": "hi",
-//     "title": null,
-//     "content": null,
-//     "target": "66ff169106ad29cbd4b2021d",
-//     "dateCreated": "2024-10-08T04:32:26.210Z",
-//     "dateUpdated": "2024-10-08T04:32:26.210Z"
-//   },
-//   {
-//     "_id": "6704b52616b0ac1b16b6c4f9",
-//     "author": "hi",
-//     "title": null,
-//     "content": null,
-//     "target": "66ff169106ad29cbd4b2021d",
-//     "dateCreated": "2024-10-08T04:29:26.787Z",
-//     "dateUpdated": "2024-10-08T04:29:26.787Z"
-//   },
-//   {
-//     "_id": "67040b582cbb3de45e0ab272",
-//     "author": "jen",
-//     "title": "lolz",
-//     "content": "anya",
-//     "target": "66ff169106ad29cbd4b2021d",
-//     "dateCreated": "2024-10-07T16:24:56.118Z",
-//     "dateUpdated": "2024-10-07T16:24:56.118Z"
-//   },
-//   {
-//     "_id": "66ff6460b2c84f92fc9b2b78",
-//     "author": "test",
-//     "title": "i agree",
-//     "content": "good",
-//     "target": "66ff61711a5482a346b1e333",
-//     "dateCreated": "2024-10-04T03:43:28.355Z",
-//     "dateUpdated": "2024-10-04T03:43:28.355Z"
-//   },
-//   {
-//     "_id": "66ff6445b2c84f92fc9b2b77",
-//     "author": "test",
-//     "title": "good",
-//     "content": "good",
-//     "target": "66ff16a406ad29cbd4b2021e",
-//     "dateCreated": "2024-10-04T03:43:01.081Z",
-//     "dateUpdated": "2024-10-04T03:43:01.081Z"
-//   },
-//   {
-//     "_id": "66ff16a406ad29cbd4b2021e",
-//     "author": "hi",
-//     "title": "bad debate",
-//     "content": "debate",
-//     "target": "66ff169106ad29cbd4b2021d",
-//     "dateCreated": "2024-10-03T22:11:48.215Z",
-//     "dateUpdated": "2024-10-03T22:15:35.683Z"
-//   },
-//   {
-//     "_id": "66fe228f288e2ee0f8fa5c24",
-//     "author": "hi",
-//     "content": "no guns",
-//     "target": "66fe2279288e2ee0f8fa5c23",
-//     "dateCreated": "2024-10-03T04:50:23.609Z",
-//     "dateUpdated": "2024-10-03T04:52:47.830Z"
-//   },
-//   {
-//     "_id": "66fe2109935bc45c397ff8df",
-//     "author": "hi",
-//     "content": "whoooooo",
-//     "target": "66fe18ec44aa5515a9ee0c5c",
-//     "dateCreated": "2024-10-03T04:43:53.054Z",
-//     "dateUpdated": "2024-10-03T04:43:53.054Z"
-//   },
-//   {
-//     "_id": "66fe2044935bc45c397ff8de",
-//     "author": "hi",
-//     "content": "loliloz",
-//     "target": "66fe18ec44aa5515a9ee0c5c",
-//     "dateCreated": "2024-10-03T04:40:36.378Z",
-//     "dateUpdated": "2024-10-03T04:40:36.378Z"
-//   }
-// ]
 
 /*
  * You should not need to edit below.
