@@ -232,7 +232,7 @@ class Routes {
     return Responses.sides(sides);
   }
 
-  @Router.post("/side/new/:topic")
+  @Router.post("/side/:topic")
   async createSide(session: SessionDoc, topic: string, degree: string) {
     const user = Sessioning.getUser(session);
     const topicId = (await Topicing.getTopicByTitle(topic))._id;
@@ -240,7 +240,7 @@ class Routes {
     return { msg: created.msg, response: await Responses.side(created.side) };
   }
 
-  @Router.patch("/side/update/:topic")
+  @Router.patch("/side/:topic")
   async updateDegreeOfSide(session: SessionDoc, topic: string, newside?: string) {
     const user = Sessioning.getUser(session);
     const topicId = (await Topicing.getTopicByTitle(topic))._id;
@@ -462,14 +462,20 @@ class Routes {
   async getResponsesForTopicDegree(topic: string, degree: string) {
     // get all responses to topic with given degree of opinion
     const topicid = (await Topicing.getTopicByTitle(topic))._id;
-    const responses = await RespondingToTopic.getByAuthorAndTarget(undefined, new ObjectId(topicid));
-    const results = await Promise.all(
-      responses.filter(async (response) => {
+    const responses = await RespondingToTopic.getByAuthorAndTarget(undefined, topicid);
+    const responsesWithSides = await Promise.all(
+      responses.map(async (response) => {
         const side = await Sideing.getSideByUserAndItem(response.author, topicid);
-        return side?.degree === degree;
+        return {
+          response,
+          matchesDegree: side?.degree === degree,
+        };
       })
-    ); // filters responses to given topic by degree of opinion we want
-    return { msg: `Found all responses to topic ${topic} with degree of opinion ${degree}`, responses: results };
+    );
+    const filteredResponses = responsesWithSides
+      .filter(result => result.matchesDegree)
+      .map(result => result.response);
+    return { msg: `Found all responses to topic ${topic} with degree of opinion ${degree}`, responses: filteredResponses };
   }
 
   //// Get degree of opinion from response to topic

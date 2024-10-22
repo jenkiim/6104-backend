@@ -142,13 +142,13 @@ const operations: Operation[] = [
   },
   {
     name: "Create Side to Topic (possible degrees: Strongly Disagree, Disagree, Slightly Disagree, Neutral, Slightly Agree, Agree, Strongly Agree, Undecided)",
-    endpoint: "/api/side/new/:topic",
+    endpoint: "/api/side/:topic",
     method: "POST",
     fields: { topic: "input", degree: "input" },
   },
   {
     name: "Update Side",
-    endpoint: "/api/side/update/:topic",
+    endpoint: "/api/side/:topic",
     method: "PATCH",
     fields: { topic: "input", newside: "input"},
   },
