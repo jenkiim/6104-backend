@@ -154,9 +154,15 @@ const operations: Operation[] = [
   },
   {
     name: "Get all Topic Labels",
-    endpoint: "/api/label/topic",
+    endpoint: "/api/label/topic/all",
     method: "GET",
     fields: {  },
+  },
+  {
+    name: "Get all Topic Labels for given topic",
+    endpoint: "/api/label/topic",
+    method: "GET",
+    fields: { topicTitle: "input" },
   },
   {
     name: "Create Topic Label",
@@ -184,9 +190,15 @@ const operations: Operation[] = [
   },
   {
     name: "Get all Response Labels",
-    endpoint: "/api/label/response",
+    endpoint: "/api/label/response/all",
     method: "GET",
     fields: {  },
+  },
+  {
+    name: "Get all Response Labels for given Response",
+    endpoint: "/api/label/response",
+    method: "GET",
+    fields: { id: "input" },
   },
   {
     name: "Create Response Label",

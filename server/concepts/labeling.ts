@@ -85,6 +85,24 @@ export default class LabelingConcept {
     return { msg: `Successfully found all items with label ${title}!`, items: tag.items };
   }
   
+  async getLabelsByItem(item: ObjectId): Promise<{ msg: string; labels: LabelDoc[] }> {
+    const labels: LabelDoc[] = await this.labels.collection.aggregate([
+      {
+        $match: { items: item }
+      },
+      {
+        $project: {
+          _id: 1,
+          author: 1,
+          title: 1,
+          items: 1
+        }
+      }
+    ]).toArray() as LabelDoc[];
+    return { msg: `Successfully found all labels containing item ${item}!`, labels: labels };
+  }
+
+  
   async filterByLabelFromGiven(given: ObjectId[], title: string) {
     const givenString = given.map(item => item.toString());
     const items = (await this.getItems(title)).items;
