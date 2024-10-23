@@ -118,11 +118,19 @@ export default class TopicingConcept {
       throw new BadValuesError("Title must be non-empty!");
     }
     await this.assertTitleUnique(title);
+    await this.assertTitleCorrectFormat(title);
   }
 
   private async assertTitleUnique(title: string) {
     if (await this.topics.readOne({ title })) {
       throw new NotAllowedError(`Topic with title ${title} already exists!`);
+    }
+  }
+
+  private async assertTitleCorrectFormat(title: string) {
+    const regex = /.+\s+vs\.\s+.+/i; // The `i` flag makes it case-insensitive
+    if (!regex.test(title)) {
+      throw new NotAllowedError("Title must be in the format 'X vs. Y'");
     }
   }
 }

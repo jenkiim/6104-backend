@@ -37,7 +37,11 @@ class Routes {
   @Router.post("/users")
   async createUser(session: SessionDoc, username: string, password: string) {
     Sessioning.isLoggedOut(session);
-    return await Authing.create(username, password);
+    const created =  await Authing.create(username, password);
+    for (let topic of await Topicing.getAllTopics()) {
+      await Sideing.create(created.user!._id, topic._id, "Undecided");
+    }
+    return created;
   }
 
   @Router.patch("/users/username")
@@ -93,6 +97,9 @@ class Routes {
   async createTopic(session: SessionDoc, title: string, description: string) {
     const user = Sessioning.getUser(session);
     const created = await Topicing.create(user, title, description);
+    for (let currentUser of await Authing.getUsers()) {
+      await Sideing.create(currentUser._id, created.topic!._id, "Undecided");
+    }
     return { msg: created.msg, response: await Responses.topic(created.topic) };
   }
 
