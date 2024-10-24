@@ -249,6 +249,12 @@ const operations: Operation[] = [
     fields: { id: "input" },
   },
   {
+    name: "Get your vote to response",
+    endpoint: "/api/vote",
+    method: "GET",
+    fields: { id: "input" },
+  },
+  {
     name: "Get all topics by given sort (newest, random, engagement)",
     endpoint: "/api/topics/sort",
     method: "GET",

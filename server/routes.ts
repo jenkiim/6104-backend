@@ -436,6 +436,22 @@ class Routes {
     return { msg: `Count of response with title ${title} and id ${id} is ${count}`, count: count };
   }
 
+  @Router.get("/vote")
+  async getVote(session: SessionDoc, id: string) {
+    const user = Sessioning.getUser(session);
+    const oid = new ObjectId(id);
+    const responseToTopic = await RespondingToTopic.inCollection(oid);
+    let title;
+    // can vote on responses to topics and responses to responses
+    if (responseToTopic) {
+      title = (await RespondingToTopic.getById(oid)).title;
+    } else {
+      title = (await RespondingToResponse.getById(oid)).title;
+    }
+    const vote = await Upvoting.getVote(user, oid)
+    return { msg: `Your vote to response with title ${title} and id ${id} is ${vote}`, vote: vote };
+  }
+
   ///// SORTING
 
   @Router.get("/topics/sort")

@@ -121,6 +121,26 @@ export default class UpvotingConcept {
     return upvote.count;
   }
 
+  async getVote(user: ObjectId, item: ObjectId) {
+    let vote = await this.upvotes.readOne({ item });
+    if (!vote) {
+      await this.create(item);
+      vote = await this.upvotes.readOne({ item });
+      if (!vote) {
+        throw new NotFoundError(`Upvote item ${item} not found!`);
+      }
+    }
+    const downvotesString = vote.downvotes.map((downvote) => downvote.toString());
+    const upvotesString = vote.upvotes.map((upvote) => upvote.toString());
+    if (downvotesString.includes(user.toString())) {
+      return "downvote";
+    } else if (upvotesString.includes(user.toString())) {
+      return "upvote";
+    } else {
+      return "none";
+    }
+  }
+
   async sortItemsByCount(items: ObjectId[]) {
     const itemIds = await this.upvotes.getSortedByUpvoteCountForItem(items);
     for (let id of items) {
