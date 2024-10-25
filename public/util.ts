@@ -258,11 +258,11 @@ const operations: Operation[] = [
     name: "Get all topics by given sort (newest, random, engagement)",
     endpoint: "/api/topics/sort",
     method: "GET",
-    fields: { sort: "input" },
+    fields: { sort: "input", search: "input" },
   },
   {
     name: "Get all responses to topics by given sort (newest, random, upvotes, downvotes, controversial)",
-    endpoint: "/api/responses/topic/:topicid/sort/:sort",
+    endpoint: "/api/responses/topic/:topicid/sort",
     method: "GET",
     fields: { topicid: "input", sort: "input" },
   },

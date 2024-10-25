@@ -158,8 +158,8 @@ export default class DocCollection<Schema extends BaseDoc> {
    * Get random documents from the collection.
    * @param limit Number of documents to return.
    */
-  async getRandomDocs(limit: number): Promise<Schema[]> {
-    return await this.collection.aggregate<Schema>([{ $sample: { size: limit } }]).toArray();
+  async getRandomDocs(search: string | undefined, limit: number): Promise<Schema[]> {
+    return await this.collection.aggregate<Schema>([...(search ? [{ $match: { title: { $regex: search, $options: "i" } } }] : []), { $sample: { size: limit } }]).toArray();
   }
 
   async getRandomDocsWithTarget(limit: number, target: ObjectId): Promise<Schema[]> {

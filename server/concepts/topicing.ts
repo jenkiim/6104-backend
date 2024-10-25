@@ -73,24 +73,37 @@ export default class TopicingConcept {
     return topics;
   }
 
-  async getSorted(sort: string, topicsSortedByEngagement: { target: ObjectId; responseCount: number }[]) {
+  async getSorted(sort: string, search: string | undefined, topicsSortedByEngagement: { target: ObjectId; responseCount: number }[]) {
     switch (sort) {
       case "newest":
-        return await this.topics.readMany({}, { sort: { dateUpdated: "desc" } });
+        const constraint = search ? { title: { $regex: search, $options: "i" } } : {};
+        return await this.topics.readMany(constraint, { sort: { dateUpdated: "desc" } });
       case "random":
-        return await this.topics.getRandomDocs(50);
+        return await this.topics.getRandomDocs(search, 50);
       case "engagement": {
+        let searchTopics: string[] = [];
+        let allTopics = await this.getAllTopics();
+        if (search) {
+          allTopics = await this.searchTopicTitles(search);
+          console.log("allTopics", allTopics);
+          searchTopics = allTopics.map((topic) => topic._id.toString());
+        }
         const topicsByEngagement = [];
         const topicsByEngagementId = new Set();
         for (const topic of topicsSortedByEngagement) {
           try {
-            topicsByEngagement.push(await this.getTopicById(topic.target));
+            if (search) {
+              if (searchTopics.includes(topic.target.toString())) {
+                topicsByEngagement.push(await this.getTopicById(topic.target));
+              }
+            } else {
+              topicsByEngagement.push(await this.getTopicById(topic.target));
+            }
             topicsByEngagementId.add(topic.target.toString());
           } finally {
             continue;
           }
         }
-        const allTopics = await this.getAllTopics();
         for (const topic of allTopics) {
           if (!topicsByEngagementId.has(topic._id.toString())) {
             topicsByEngagement.push(topic);
